@@ -1,6 +1,6 @@
 package kademlia
 
 type KademliaNode struct {
-	contact    *kademliaContact
+	contact    *KademliaContact
 	figerTable FingerTable
 }
