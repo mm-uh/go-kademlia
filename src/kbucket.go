@@ -56,7 +56,7 @@ func (kB *kademliaKBucket) Update(c Contact) {
 	return
 }
 
-func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId uint64) []Contact {
+func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Contact {
 	unorderedScl := sortableContactListFromLinkedList(kB.start, nodeId)
 	sort.Sort(unorderedScl)
 	scl := (*unorderedScl)[:k]
@@ -68,19 +68,21 @@ func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId uint64) []Contact {
 }
 
 type distanceToContact struct {
-	distance uint64
+	distance Key
 	c        Contact
 }
 
-func sortableContactListFromLinkedList(start *linkedList, nodeId uint64) *sortableContactList {
+func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableContactList {
 	scl := new(sortableContactList)
 	for true {
 		if start == nil {
 			break
 		}
+		//ToDo Handle Error
+		dist, _ := nodeId.XOR(start.value.GetNodeId())
 		scl.append(&distanceToContact{
 			c:        start.value,
-			distance: XOR(nodeId, start.value.GetNodeId()),
+			distance: dist,
 		})
 		start = start.next
 	}
@@ -103,7 +105,9 @@ func (scl *sortableContactList) Swap(i, j int) {
 }
 
 func (scl *sortableContactList) Less(i, j int) bool {
-	return (*scl)[i].distance < (*scl)[j].distance
+	//ToDo Handel Error
+	val, _ := (*scl)[i].distance.Less((*scl)[j].distance)
+	return val
 }
 
 func newLinkedListNode(c Contact) *linkedList {

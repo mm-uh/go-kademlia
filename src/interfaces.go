@@ -15,7 +15,7 @@ type KBucket interface {
 }
 
 type Contact interface {
-	GetNodeId() uint64
+	GetNodeId() Key
 	GetIP() string
 	GetPort() int
 	Ping() bool
@@ -30,4 +30,5 @@ type Key interface {
 	XOR(other Key) (Key, error)
 	IsActive(index int) bool
 	Lenght() int
+	Less(other Key) (bool, error)
 }

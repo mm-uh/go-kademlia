@@ -29,3 +29,18 @@ func (kn *KeyNode) IsActive(index int) bool {
 func (kn *KeyNode) Lenght() int {
 	return 256
 }
+
+func (kn *KeyNode) Less(other Key) (bool, error) {
+	otherKeyNode, ok := other.(*KeyNode)
+	if !ok {
+		return false, errors.New("Other is not a valid type")
+	}
+
+	for i := 31; i >= 0; i-- {
+		if kn[i] == otherKeyNode[i] {
+			continue
+		}
+		return kn[i] < otherKeyNode[i], nil
+	}
+	return false, nil
+}
