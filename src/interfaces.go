@@ -1,6 +1,6 @@
 package kademlia
 
-type Kademlia interface{
+type Kademlia interface {
 	Ping() Contact
 	Store(uint64, interface{}) error
 	Get(uint64) (interface{}, error)
@@ -8,20 +8,20 @@ type Kademlia interface{
 	GetContact() Contact
 }
 
-
-type KBucket interface{
+type KBucket interface {
 	Update(Contact) error
-	GetClosesNodes(int, uint64) []Contact
+	GetClosestNodes(int, uint64) []Contact
+	GetAllNodes() []Contact
 }
 
-type Contact interface{
+type Contact interface {
 	GetNodeId() uint64
 	GetIP() string
 	GetPort() int
+	Ping() bool
 }
 
-type FingerTable interface{
+type FingerTable interface {
 	GetClosestNodes(int, uint64) []Contact
 	GetKBucket(int) KBucket
-	GetKBucketOfContact(Contact) KBucket
 }
