@@ -2,15 +2,15 @@ package kademlia
 
 type Kademlia interface {
 	Ping() Contact
-	Store(uint64, interface{}) error
-	Get(uint64) (interface{}, error)
-	ClosestNodes(int, uint64) []Contact
+	Store(Key, interface{}) error
+	Get(Key) (interface{}, error)
+	ClosestNodes(int, Key) []Contact
 	GetContact() Contact
 }
 
 type KBucket interface {
 	Update(Contact) error
-	GetClosestNodes(int, uint64) []Contact
+	GetClosestNodes(int, Key) []Contact
 	GetAllNodes() []Contact
 }
 
@@ -22,6 +22,10 @@ type Contact interface {
 }
 
 type FingerTable interface {
-	GetClosestNodes(int, uint64) []Contact
+	GetClosestNodes(int, Key) []Contact
 	GetKBucket(int) KBucket
+}
+
+type Key interface {
+	XOR(other Key) Key
 }
