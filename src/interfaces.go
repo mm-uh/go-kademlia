@@ -29,4 +29,5 @@ type FingerTable interface {
 type Key interface {
 	XOR(other Key) (Key, error)
 	IsActive(index int) bool
+	Lenght() int
 }

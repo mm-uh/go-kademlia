@@ -15,16 +15,27 @@ func (ft *kademliaFingerTable) GetKBucket(index int) KBucket {
 func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Contact {
 
 	closestNodes := make([]Contact, 0)
-	dist := ft.id.XOR(key)
-	actIndex := dist.Lenght() - 1
-	for len(closestNodes) < k {
+	//ToDo Handle error
+	dist, _ := ft.id.XOR(key)
 
-		for !dist.IsActive(actIndex) && actIndex > 0 {
-			actIndex--
+	for i := dist.Lenght() - 1; i > 0; i-- {
+		if dist.IsActive(i) {
+			closestNodes = append(closestNodes, ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)...)
 		}
-		closestNodes = append(closestNodes, ft.kbuckets[actIndex].GetClosestNodes(k-len(closestNodes), key)...)
-
+		if len(closestNodes) == k {
+			return closestNodes
+		}
 	}
 
-	return nil
+	for i := 0; i < dist.Lenght(); i++ {
+		if !dist.IsActive(i) {
+			closestNodes = append(closestNodes, ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)...)
+		}
+		if len(closestNodes) == k {
+			return closestNodes
+		}
+	}
+
+	return closestNodes
+
 }
