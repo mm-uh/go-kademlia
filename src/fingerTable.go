@@ -12,9 +12,9 @@ func (ft *kademliaFingerTable) GetKBucket(index int) KBucket {
 	return ft.kbuckets[index]
 }
 
-func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Contact {
+func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Kademlia {
 
-	closestNodes := make([]Contact, 0)
+	closestNodes := make([]Kademlia, 0)
 	//ToDo Handle error
 	dist, _ := ft.id.XOR(key)
 
