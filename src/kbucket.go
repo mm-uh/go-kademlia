@@ -8,7 +8,7 @@ type kademliaKBucket struct {
 	k     int
 }
 
-func (kB *kademliaKBucket) Update(c Contact) {
+func (kB *kademliaKBucket) Update(c Kademlia) {
 	nn := newLinkedListNode(c)
 
 	// if the contact is already in the kBucket
@@ -110,7 +110,7 @@ func (scl *sortableContactList) Less(i, j int) bool {
 	return val
 }
 
-func newLinkedListNode(c Contact) *linkedList {
+func newLinkedListNode(c Kademlia) *linkedList {
 	return &linkedList{
 		next:  nil,
 		value: c,
@@ -119,7 +119,7 @@ func newLinkedListNode(c Contact) *linkedList {
 
 type linkedList struct {
 	next  *linkedList
-	value Contact
+	value Kademlia
 }
 
 func (n *linkedList) len() int {
