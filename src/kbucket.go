@@ -56,11 +56,11 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 	return
 }
 
-func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Contact {
+func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Kademlia {
 	unorderedScl := sortableContactListFromLinkedList(kB.start, nodeId)
 	sort.Sort(unorderedScl)
 	scl := (*unorderedScl)[:k]
-	contacts := make([]Contact, 0)
+	contacts := make([]Kademlia, 0)
 	for _, cd := range scl {
 		contacts = append(contacts, cd.c)
 	}
@@ -69,7 +69,7 @@ func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Contact {
 
 type distanceToContact struct {
 	distance Key
-	c        Contact
+	c        Kademlia
 }
 
 func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableContactList {
