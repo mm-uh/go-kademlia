@@ -1,21 +1,33 @@
 package kademlia
 
+import (
+	"encoding/json"
+	"github.com/mm-uh/rpc_udp/src/util"
+	"log"
+	"net"
+	"strconv"
+)
+
 type KademliaContact struct {
-	id   uint64
+	key  Key
 	ip   string
 	port int
 }
 
-func newKademliaContact(key uint64, ip string, port int) *KademliaContact {
+func getClient(addr string) Kademlia {
+	return nil
+}
+
+func newKademliaContact(key Key, ip string, port int) *KademliaContact {
 	return &KademliaContact{
-		id:   key,
+		key:  key,
 		ip:   ip,
 		port: port,
 	}
 }
 
-func (kc *KademliaContact) GetNodeId() uint64 {
-	return kc.id
+func (kc *KademliaContact) GetNodeId() Key {
+	return kc.key
 }
 
 func (kc *KademliaContact) GetIP() string {
@@ -26,22 +38,76 @@ func (kc *KademliaContact) GetPort() int {
 	return kc.port
 }
 
-func (kc *KademliaContact) Ping() int {
-	return kc.port
+func (kc *KademliaContact) Ping() bool {
+	methodName := "Ping"
+	rpcbase := &util.RPCBase{
+		MethodName: methodName,
+		Args:       make([]string, 0),
+	}
+	rpcbase.Args = append(rpcbase.Args, "Ping")
+	response, err := kc.MakeRequest(rpcbase)
+	if err != nil {
+		return false
+	}
+	if response.Response != "Pong" {
+		return false
+	}
+	return true
 }
 
-func (kc *KademliaContact) Store(id uint64, i interface{}) error {
+func (kc *KademliaContact) Store(key Key, i interface{}) error {
+	// Do whatever todo for store some value
 	return nil
 }
 
-func (kc *KademliaContact) Get(id uint64) (interface{}, error) {
+func (kc *KademliaContact) Get(key Key) (interface{}, error) {
 	return nil, nil
 }
 
-func (kc *KademliaContact) ClosesNodes(k int, id uint64) []Contact {
+func (kc *KademliaContact) ClosesNodes(k int, key Key) []Kademlia {
 	return nil
 }
 
-func (kc *KademliaContact) GetContact() Contact {
-	return nil
+func (kc KademliaContact) MakeRequest(rpcbase *util.RPCBase) (*util.ResponseRPC, error) {
+
+	service := kc.ip + ":" + strconv.Itoa(kc.port)
+
+	RemoteAddr, err := net.ResolveUDPAddr("udp", service)
+
+	conn, err := net.DialUDP("udp", nil, RemoteAddr)
+
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	defer conn.Close()
+
+	// write a message to server
+	toSend, err := json.Marshal(rpcbase)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	message := []byte(string(toSend))
+
+	_, err = conn.Write(message)
+
+	if err != nil {
+		log.Println("Errorrr: " + err.Error())
+		return nil, err
+	}
+
+	// receive message from server
+	buffer := make([]byte, 1024)
+	n, _, err := conn.ReadFromUDP(buffer)
+
+	var response util.ResponseRPC
+	err = json.Unmarshal(buffer[:n], &response)
+	if err != nil {
+		log.Fatal("Error Unmarshaling response")
+		return nil, err
+	}
+	return &response, nil
 }
