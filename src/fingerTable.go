@@ -20,7 +20,10 @@ func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Kademlia {
 
 	for i := dist.Lenght() - 1; i > 0; i-- {
 		if dist.IsActive(i) {
-			closestNodes = append(closestNodes, ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)...)
+			newClosestNodes := ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)
+			if newClosestNodes != nil {
+				closestNodes = append(closestNodes, newClosestNodes...)
+			}
 		}
 		if len(closestNodes) == k {
 			return closestNodes
@@ -29,7 +32,10 @@ func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Kademlia {
 
 	for i := 0; i < dist.Lenght(); i++ {
 		if !dist.IsActive(i) {
-			closestNodes = append(closestNodes, ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)...)
+			newClosestNodes := ft.kbuckets[i].GetClosestNodes(k-len(closestNodes), key)
+			if newClosestNodes != nil {
+				closestNodes = append(closestNodes, newClosestNodes...)
+			}
 		}
 		if len(closestNodes) == k {
 			return closestNodes

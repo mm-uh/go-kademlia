@@ -44,3 +44,8 @@ func (kn *KeyNode) Less(other Key) (bool, error) {
 	}
 	return false, nil
 }
+
+//ToDo
+func KeyNodeFromSHA256() *KeyNode {
+	return nil
+}
