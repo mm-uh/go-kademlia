@@ -11,7 +11,7 @@ type Kademlia interface {
 }
 
 type KBucket interface {
-	Update(Kademlia) error
+	Update(Kademlia)
 	GetClosestNodes(int, Key) []Kademlia
 	GetAllNodes() []Kademlia
 }

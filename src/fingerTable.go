@@ -12,7 +12,7 @@ func (ft *kademliaFingerTable) GetKBucket(index int) KBucket {
 	return ft.kbuckets[index]
 }
 
-func (ft *kademliaFingerTable) GetClosestNodes(k int, key *KeyNode) []Kademlia {
+func (ft *kademliaFingerTable) GetClosestNodes(k int, key Key) []Kademlia {
 
 	closestNodes := make([]Kademlia, 0)
 	//ToDo Handle error
