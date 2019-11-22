@@ -3,7 +3,7 @@ package kademlia
 import (
 	"encoding/json"
 	"github.com/mm-uh/rpc_udp/src/util"
-	"log"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 )
@@ -77,7 +77,7 @@ func (kc KademliaContact) MakeRequest(rpcbase *util.RPCBase) (*util.ResponseRPC,
 	conn, err := net.DialUDP("udp", nil, RemoteAddr)
 
 	if err != nil {
-		log.Fatal(err)
+		logrus.Warn(err)
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (kc KademliaContact) MakeRequest(rpcbase *util.RPCBase) (*util.ResponseRPC,
 	// write a message to server
 	toSend, err := json.Marshal(rpcbase)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Warn(err)
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func (kc KademliaContact) MakeRequest(rpcbase *util.RPCBase) (*util.ResponseRPC,
 	_, err = conn.Write(message)
 
 	if err != nil {
-		log.Println("Errorrr: " + err.Error())
+		logrus.Warn("Errorrr: " + err.Error())
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (kc KademliaContact) MakeRequest(rpcbase *util.RPCBase) (*util.ResponseRPC,
 	var response util.ResponseRPC
 	err = json.Unmarshal(buffer[:n], &response)
 	if err != nil {
-		log.Fatal("Error Unmarshaling response")
+		logrus.Warn("Error Unmarshaling response")
 		return nil, err
 	}
 	return &response, nil
