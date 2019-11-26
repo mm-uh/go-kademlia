@@ -27,5 +27,5 @@ type Key interface {
 	XOR(other Key) (Key, error)
 	IsActive(index int) bool
 	Lenght() int
-	Less(other Key) (bool, error)
+	Less(other interface{}) (bool, error)
 }

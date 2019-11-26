@@ -30,7 +30,7 @@ func (kn *KeyNode) Lenght() int {
 	return 256
 }
 
-func (kn *KeyNode) Less(other Key) (bool, error) {
+func (kn *KeyNode) Less(other interface{}) (bool, error) {
 	otherKeyNode, ok := other.(*KeyNode)
 	if !ok {
 		return false, errors.New("Other is not a valid type")
