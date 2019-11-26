@@ -6,6 +6,7 @@ type LocalKademlia struct {
 	port int
 	id   *KeyNode
 	k    int
+	sm   StorageManager
 }
 
 func NewLocalKademlia(ip string, port, k int) *LocalKademlia {
@@ -51,6 +52,15 @@ func (lk *LocalKademlia) Store(Key, data interface{}) error {
 	return nil
 }
 
-func (lk *LocalKademlia) Get(id Key) (interface{}, error) {
+//func (lk *LocalKademlia) Get(id Key) (interface{}, error) {
+//	return nil, nil
+//}
+//
+//func (lk *LocalKademlia) StoreOnNetwork(id Key, data interface{}) error {
+//
+//	return nil
+//}
+
+func (lk *LocalKademlia) GetFromNetwork(id Key) (interface{}, error) {
 	return nil, nil
 }

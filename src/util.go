@@ -18,3 +18,8 @@ func Pow(a int, b int) int {
 	}
 	return Pow(halfPow, 2)
 }
+
+type StorageManager interface {
+	Store(Key, interface{}) error
+	Get(Key) (interface{}, error)
+}
