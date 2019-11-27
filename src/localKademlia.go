@@ -83,35 +83,74 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 	}
 	//ToDo manage error
 	dist, _ := startNodes[0].GetNodeId().XOR(id)
-	Nodes, startNodes = avl.NewNode(dist, startNodes[0]), startNodes[1:]
+	Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
+	node, _ := Nodes.Value.(nodeLookup)
+	node.queried = true
 	nextRoundMain := make(chan bool)
 	nextRoundReceiver := make(chan bool)
 	allNodesComplete := make(chan int)
 	receivFromWorkers := make(chan nodesPackage)
 	receivFromStorage := make(chan nodesPackage)
-	go startRoundGuard(nextRoundMain, nextRoundReceiver, allNodesComplete)
-	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, allNodesComplete)
+	endStorage := make(chan bool)
+	endGuard := make(chan bool)
+	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
+	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, round, receivFromWorkers)
+		go queryNode(node, id, round, lk.k, receivFromWorkers)
 		//Add node to ordered structure
+		dist, _ := node.GetNodeId().XOR(id)
+		nl := newNodeLookup(node)
+		nl.queried = true
+		newNode := avl.NewNode(dist, nl)
+		Nodes = avl.Insert(Nodes, newNode)
 	}
 
 	for {
-		ended := <-nextRoundMain
+		_ = <-nextRoundMain
+		round++
 		np := <-receivFromStorage
 		nodes := np.receivNodes
 		for node := range nodes {
 			//add nodes to ordered structure
+			dist, _ := node.GetNodeId().XOR(id)
+			newNode := avl.NewNode(dist, newNodeLookup(node))
+			Nodes = avl.Insert(Nodes, newNode)
 		}
-		//get k first node from ordered structure
-		//select a first not queried and repeat
-		//if there is not queried nodes finish
+		mins := Nodes.GetKMins(lk.k)
+		asked := 0
+		for _, node := range mins {
+			n, ok := node.Value.(nodeLookup)
+			if !ok {
+				panic("Incorrect type")
+			}
+			if !n.queried {
+				n.queried = true
+				go queryNode(n.node, id, round, lk.k, receivFromWorkers)
+				asked++
+			}
+			if asked == lk.a {
+				break
+			}
+		}
+		if asked == 0 {
+			answ := make([]Kademlia, 0)
+			for _, node := range Nodes.GetKMins(lk.k) {
+				n, ok := node.Value.(nodeLookup)
+				if !ok {
+					panic("Incorrect type")
+				}
+				answ = append(answ, n.node)
+			}
+			endGuard <- true
+			endStorage <- true
+			return answ
+		}
 
 	}
 
 }
 
-func startRoundGuard(nextRoundMain, nextRoundReceiver chan bool, allNodesComplete chan int) {
+func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allNodesComplete chan int) {
 	var actRound int = 1
 	for {
 		timeout := make(chan bool)
@@ -120,19 +159,19 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver chan bool, allNodesComplet
 			timeout <- true
 		}()
 
-		for {
-			select {
-			case next := <-timeout:
-				{
-
+		select {
+		case _ = <-timeout:
+			{
+			}
+		case round := <-allNodesComplete:
+			{
+				if round == actRound {
+					break
 				}
-
-			case round := <-allNodesComplete:
-				{
-					if round == actRound {
-						break
-					}
-				}
+			}
+		case _ = <-lookupEnd:
+			{
+				return
 			}
 		}
 
@@ -144,12 +183,63 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver chan bool, allNodesComplet
 
 }
 
-func queryNode(node Kademlia, round int, send chan nodesPackage) {
-
+func queryNode(node Kademlia, id Key, round, k int, send chan nodesPackage) {
+	nodes := node.ClosestNodes(k, id)
+	var channel chan Kademlia
+	np := nodesPackage{
+		round:       0,
+		receivNodes: channel,
+	}
+	send <- np
+	for _, n := range nodes {
+		channel <- n
+	}
 }
 
-func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound chan bool, allNodesComplete chan int) {
+func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, lookupEnd chan bool, allNodesComplete chan int, a int) {
+	var actRound int = 1
+	var finished int = 0
+	var nodesForSend []Kademlia
+	for {
 
+		select {
+		case np := <-receivFromWorkers:
+			{
+				channel := np.receivNodes
+				for node := range channel {
+					nodesForSend = append(nodesForSend, node)
+				}
+				if np.round == actRound {
+					finished++
+				}
+				if finished == a {
+					allNodesComplete <- actRound
+				}
+			}
+
+		case _ = <-nextRound:
+			{
+				actRound++
+				var channel chan Kademlia
+				np := nodesPackage{
+					round:       actRound,
+					receivNodes: channel,
+				}
+				sendToMain <- np
+				for _, node := range nodesForSend {
+					channel <- node
+				}
+				close(channel)
+				nodesForSend = make([]Kademlia, 0)
+			}
+
+		case _ = <-lookupEnd:
+			{
+				return
+			}
+		}
+
+	}
 }
 
 type nodesPackage struct {
@@ -162,8 +252,9 @@ type nodeLookup struct {
 	node    Kademlia
 }
 
-type test struct{}
-
-func (t test) Less(a test) (bool, error) {
-	return true, nil
+func newNodeLookup(node Kademlia) *nodeLookup {
+	return &nodeLookup{
+		queried: false,
+		node:    node,
+	}
 }
