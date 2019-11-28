@@ -1,6 +1,8 @@
 package kademlia
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"time"
 
 	avl "github.com/mm-uh/go-avl/src"
@@ -17,18 +19,18 @@ type LocalKademlia struct {
 }
 
 func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
-	id := KeyNodeFromSHA256()
+	key := KeyNode(sha256.Sum256([]byte(fmt.Sprintf("%s:%d", ip, port))))
 	kBuckets := make([]KBucket, 0)
 	for i := 0; i < 160; i++ {
 		kBuckets = append(kBuckets, NewKademliaKBucket(k))
 	}
 	ft := &kademliaFingerTable{
-		id:       *id,
+		id:       key,
 		kbuckets: kBuckets,
 	}
 	return &LocalKademlia{
 		ft:   ft,
-		id:   id,
+		id:   &key,
 		ip:   ip,
 		port: port,
 		k:    k,
@@ -38,15 +40,15 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 	lk.ft.Update(node)
-	lk.nodeLookup(lk.GetNodeID())
+	lk.nodeLookup(lk.GetNodeId())
 	var index int = 0
-	for ; index < lk.GetNodeID().Lenght(); index++ {
+	for ; index < lk.GetNodeId().Lenght(); index++ {
 		if len(lk.ft.GetKBucket(index).GetAllNodes()) != 0 {
 			break
 		}
 	}
 	index++
-	for ; index < lk.GetNodeID().Lenght(); index++ {
+	for ; index < lk.GetNodeId().Lenght(); index++ {
 		key := lk.ft.GetKeyFromKBucket(index)
 		lk.nodeLookup(key)
 	}
@@ -65,7 +67,7 @@ func (lk *LocalKademlia) GetPort() int {
 	return lk.port
 }
 
-func (lk *LocalKademlia) GetNodeID() Key {
+func (lk *LocalKademlia) GetNodeId() Key {
 	return lk.id
 }
 

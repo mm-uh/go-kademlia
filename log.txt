@@ -1,0 +1,214 @@
+runtime: goroutine stack exceeds 1000000000-byte limit
+fatal error: stack overflow
+
+runtime stack:
+runtime.throw(0x4c9622, 0xe)
+	/usr/local/go/src/runtime/panic.go:617 +0x72
+runtime.newstack()
+	/usr/local/go/src/runtime/stack.go:1041 +0x6f0
+runtime.morestack()
+	/usr/local/go/src/runtime/asm_amd64.s:429 +0x8f
+
+goroutine 1 [running]:
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:11 +0xe2 fp=0xc024000370 sp=0xc024000368 pc=0x494002
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240003a0 sp=0xc024000370 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240003d0 sp=0xc0240003a0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000400 sp=0xc0240003d0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000430 sp=0xc024000400 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000460 sp=0xc024000430 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000490 sp=0xc024000460 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240004c0 sp=0xc024000490 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240004f0 sp=0xc0240004c0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000520 sp=0xc0240004f0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000550 sp=0xc024000520 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000580 sp=0xc024000550 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240005b0 sp=0xc024000580 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240005e0 sp=0xc0240005b0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000610 sp=0xc0240005e0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000640 sp=0xc024000610 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000670 sp=0xc024000640 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240006a0 sp=0xc024000670 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240006d0 sp=0xc0240006a0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000700 sp=0xc0240006d0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000730 sp=0xc024000700 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000760 sp=0xc024000730 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000790 sp=0xc024000760 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240007c0 sp=0xc024000790 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240007f0 sp=0xc0240007c0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000820 sp=0xc0240007f0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000850 sp=0xc024000820 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000880 sp=0xc024000850 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240008b0 sp=0xc024000880 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240008e0 sp=0xc0240008b0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000910 sp=0xc0240008e0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000940 sp=0xc024000910 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000970 sp=0xc024000940 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240009a0 sp=0xc024000970 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240009d0 sp=0xc0240009a0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000a00 sp=0xc0240009d0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000a30 sp=0xc024000a00 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000a60 sp=0xc024000a30 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000a90 sp=0xc024000a60 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000ac0 sp=0xc024000a90 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000af0 sp=0xc024000ac0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000b20 sp=0xc024000af0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000b50 sp=0xc024000b20 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000b80 sp=0xc024000b50 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000bb0 sp=0xc024000b80 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000be0 sp=0xc024000bb0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000c10 sp=0xc024000be0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000c40 sp=0xc024000c10 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000c70 sp=0xc024000c40 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000ca0 sp=0xc024000c70 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000cd0 sp=0xc024000ca0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000d00 sp=0xc024000cd0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000d30 sp=0xc024000d00 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000d60 sp=0xc024000d30 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000d90 sp=0xc024000d60 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000dc0 sp=0xc024000d90 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000df0 sp=0xc024000dc0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000e20 sp=0xc024000df0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000e50 sp=0xc024000e20 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000e80 sp=0xc024000e50 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000eb0 sp=0xc024000e80 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000ee0 sp=0xc024000eb0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000f10 sp=0xc024000ee0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000f40 sp=0xc024000f10 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000f70 sp=0xc024000f40 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000fa0 sp=0xc024000f70 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024000fd0 sp=0xc024000fa0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001000 sp=0xc024000fd0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001030 sp=0xc024001000 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001060 sp=0xc024001030 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001090 sp=0xc024001060 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240010c0 sp=0xc024001090 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240010f0 sp=0xc0240010c0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001120 sp=0xc0240010f0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001150 sp=0xc024001120 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001180 sp=0xc024001150 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240011b0 sp=0xc024001180 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240011e0 sp=0xc0240011b0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001210 sp=0xc0240011e0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001240 sp=0xc024001210 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001270 sp=0xc024001240 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240012a0 sp=0xc024001270 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240012d0 sp=0xc0240012a0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001300 sp=0xc0240012d0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001330 sp=0xc024001300 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001360 sp=0xc024001330 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001390 sp=0xc024001360 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240013c0 sp=0xc024001390 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240013f0 sp=0xc0240013c0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001420 sp=0xc0240013f0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001450 sp=0xc024001420 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001480 sp=0xc024001450 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240014b0 sp=0xc024001480 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240014e0 sp=0xc0240014b0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001510 sp=0xc0240014e0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001540 sp=0xc024001510 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001570 sp=0xc024001540 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240015a0 sp=0xc024001570 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc0240015d0 sp=0xc0240015a0 pc=0x493f75
+github.com/mm-uh/go-kademlia/src.Pow(0x2, 0x0, 0x0)
+	/home/kid/GoProjects/src/github.com/mm-uh/go-kademlia/src/util.go:15 +0x55 fp=0xc024001600 sp=0xc0240015d0 pc=0x493f75
+...additional frames elided...
+exit status 2
