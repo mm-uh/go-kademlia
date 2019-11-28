@@ -1,7 +1,7 @@
 package kademlia
 
 import (
-	"crypto/sha256"
+	"crypto/sha1"
 	"fmt"
 	"time"
 
@@ -19,7 +19,7 @@ type LocalKademlia struct {
 }
 
 func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
-	key := KeyNode(sha256.Sum256([]byte(fmt.Sprintf("%s:%d", ip, port))))
+	key := KeyNode(sha1.Sum([]byte(fmt.Sprintf("%s:%d", ip, port))))
 	kBuckets := make([]KBucket, 0)
 	for i := 0; i < 160; i++ {
 		kBuckets = append(kBuckets, NewKademliaKBucket(k))
