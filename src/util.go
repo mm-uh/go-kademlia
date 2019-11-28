@@ -9,6 +9,9 @@ func log(a uint64) int {
 }
 
 func Pow(a int, b int) int {
+	if b == 0 {
+		return 1
+	}
 	if b == 2 {
 		return a * a
 	}
