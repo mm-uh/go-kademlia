@@ -4,7 +4,7 @@ type Kademlia interface {
 	Ping() bool
 	Store(Key, interface{}) error
 	Get(Key) (interface{}, error)
-	ClosestNodes(int, Key) []Kademlia
+	ClosestNodes(int, Key) ([]Kademlia, error)
 	GetNodeId() Key
 	GetIP() string
 	GetPort() int
@@ -26,4 +26,6 @@ type Key interface {
 	IsActive(index int) bool
 	Lenght() int
 	Less(other Key) (bool, error)
+	GetString() string
+	GetFromString(string) error
 }
