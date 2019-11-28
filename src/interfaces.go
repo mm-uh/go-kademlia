@@ -22,6 +22,7 @@ type FingerTable interface {
 	GetClosestNodes(int, Key) []Kademlia
 	GetKBucket(int) KBucket
 	Update(Kademlia)
+	GetKeyFromKBucket(k int) Key
 }
 
 type Key interface {

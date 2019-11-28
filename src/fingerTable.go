@@ -45,3 +45,30 @@ func (ft *kademliaFingerTable) GetClosestNodes(k int, key Key) []Kademlia {
 	return closestNodes
 
 }
+
+func (ft *kademliaFingerTable) Update(node Kademlia) {
+	dist, _ := ft.id.XOR(node.GetNodeId())
+	var index int = ft.id.Lenght() - 1
+	for ; index >= 0; index-- {
+		if dist.IsActive(index) {
+			break
+		}
+	}
+	kbucket := ft.GetKBucket(index)
+	kbucket.Update(node)
+}
+
+func (ft *kademliaFingerTable) GetKeyFromKBucket(k int) Key {
+	myKey := ft.id
+	artKey := KeyNode{}
+	indexByte := k / 8
+	indexBit := uint8(k % 8)
+	for i, bt := range myKey {
+		artKey[i] = bt
+		if i == indexByte {
+			artKey[i] = bt ^ 1<<(indexBit)
+		}
+	}
+
+	return &artKey
+}

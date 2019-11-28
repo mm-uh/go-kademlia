@@ -37,17 +37,20 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 }
 
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
-	dist, _ := lk.GetNodeID().XOR(node.GetNodeId())
-	var index int = 255
-	for ; index >= 0; index-- {
-		if dist.IsActive(index) {
+	lk.ft.Update(node)
+	lk.nodeLookup(lk.GetNodeID())
+	var index int = 0
+	for ; index < lk.GetNodeID().Lenght(); index++ {
+		if len(lk.ft.GetKBucket(index).GetAllNodes()) != 0 {
 			break
 		}
 	}
-	kbucket := lk.ft.GetKBucket(index)
-	kbucket.Update(node)
+	index++
+	for ; index < lk.GetNodeID().Lenght(); index++ {
+		key := lk.ft.GetKeyFromKBucket(index)
+		lk.nodeLookup(key)
+	}
 
-	lk.nodeLookup(lk.GetNodeID())
 }
 
 func (lk *LocalKademlia) Ping() bool {
