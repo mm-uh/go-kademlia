@@ -10,6 +10,7 @@ type Kademlia interface {
 	GetNodeId() Key
 	GetIP() string
 	GetPort() int
+	JoinNetwork(Kademlia)
 }
 
 type KBucket interface {
