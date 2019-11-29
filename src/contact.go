@@ -53,15 +53,64 @@ func (kc *RemoteKademlia) Ping() bool {
 	return true
 }
 
-func (kc *RemoteKademlia) StoreOnNetwork(Key, interface{}) error {
+func (kc *RemoteKademlia) StoreOnNetwork(key Key,i interface{}) error {
+	methodName := "StoreOnNetwork"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]interface{}, 0)
+	args = append(args, key.GetString())
+	args = append(args, i)
+	rpcBase.Args = args
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return err
+	}
+	if response.Response != "true" {
+		return errors.New("error storing value")
+	}
 	return nil
 }
 
-func (kc *RemoteKademlia) GetFromNetwork(k Key) (interface{}, error) {
-	return nil, nil
+func (kc *RemoteKademlia) GetFromNetwork(key Key) (interface{}, error) {
+	methodName := "GetFromNetwork"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]string, 0)
+	args = append(args, key.GetString())
+	rpcBase.Args = args
+
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return nil, err
+	}
+	var returnedKey Key
+	err = returnedKey.GetFromString(response.Response)
+	if err != nil {
+		return nil, err
+	}
+	return returnedKey, nil
 }
 
-func (kc *RemoteKademlia) JoinNetwork(Kademlia) {
+func (kc *RemoteKademlia) JoinNetwork(kademlia Kademlia) error {
+	methodName := "JoinNetwork"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]interface{}, 0)
+	args = append(args, kademlia.GetNodeId())
+	args = append(args, kademlia.GetIP())
+	args = append(args, kademlia.GetPort())
+	rpcBase.Args = args
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return err
+	}
+	if response.Response != "true" {
+		return errors.New("error storing value")
+	}
+	return nil
 
 }
 
@@ -105,26 +154,26 @@ func (kc *RemoteKademlia) Get(key Key) (interface{}, error) {
 	return returnedKey, nil
 }
 
-func (kc *RemoteKademlia) ClosestNodes(k int, key Key) ([]Kademlia, error) {
-	methodName := "ClosesNodes"
-	rpcBase := &util.RPCBase{
-		MethodName: methodName,
-	}
-	args := make([]float64, 0)
-	args = append(args, float64(k))
-	rpcBase.Args = args
-
-	response := Contacts{}
-	nodeResponse, err := kc.MakeRequest(rpcBase)
-	if err != nil {
-		return response, err
-	}
-	err = json.Unmarshal([]byte(nodeResponse.Response), &response)
-	if err != nil {
-		return response, err
-	}
-	return response, nil
-}
+//func (kc *RemoteKademlia) ClosestNodes(k int, key Key) ([]Kademlia, error) {
+//	methodName := "ClosesNodes"
+//	rpcBase := &util.RPCBase{
+//		MethodName: methodName,
+//	}
+//	args := make([]float64, 0)
+//	args = append(args, float64(k))
+//	rpcBase.Args = args
+//
+//	response := Contacts{}
+//	nodeResponse, err := kc.MakeRequest(rpcBase)
+//	if err != nil {
+//		return response, err
+//	}
+//	err = json.Unmarshal([]byte(nodeResponse.Response), &response)
+//	if err != nil {
+//		return response, err
+//	}
+//	return response, nil
+//}
 
 func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC, error) {
 

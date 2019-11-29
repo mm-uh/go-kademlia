@@ -38,7 +38,7 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 	}
 }
 
-func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
+func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 	lk.ft.Update(node)
 	lk.nodeLookup(lk.GetNodeId())
 	var index int = 0
@@ -53,7 +53,7 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 		key := lk.ft.GetKeyFromKBucket(index)
 		lk.nodeLookup(key)
 	}
-
+	return nil
 }
 
 func (lk *LocalKademlia) Ping() bool {
