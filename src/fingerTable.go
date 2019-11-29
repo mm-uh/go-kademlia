@@ -2,7 +2,7 @@ package kademlia
 
 type kademliaFingerTable struct {
 	kbuckets []KBucket
-	id       KeyNode
+	id       *KeyNode
 }
 
 func (ft *kademliaFingerTable) GetKBucket(index int) KBucket {
@@ -48,14 +48,19 @@ func (ft *kademliaFingerTable) GetClosestNodes(k int, key Key) []Kademlia {
 }
 
 func (ft *kademliaFingerTable) Update(node Kademlia) {
-
+	key := node.GetNodeId()
+	if equal, _ := key.Equal(ft.id); equal {
+		return
+	}
 	dist, _ := ft.id.XOR(node.GetNodeId())
 	var index int = ft.id.Lenght() - 1
 	for ; index >= 0; index-- {
 		if dist.IsActive(index) {
 			break
 		}
+
 	}
+
 	kbucket := ft.GetKBucket(index)
 	kbucket.Update(node)
 }
