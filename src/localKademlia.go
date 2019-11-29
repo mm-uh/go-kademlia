@@ -85,7 +85,7 @@ func (lk *LocalKademlia) GetNodeId() Key {
 	return lk.id
 }
 
-func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) []Kademlia {
+func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) ([]Kademlia, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)

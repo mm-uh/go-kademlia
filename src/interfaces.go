@@ -15,14 +15,14 @@ type Kademlia interface {
 
 type KBucket interface {
 	Update(Kademlia)
-	GetClosestNodes(int, Key) []Kademlia
+	GetClosestNodes(int, Key) ([]Kademlia, error)
 	GetAllNodes() []Kademlia
 }
 
 type FingerTable interface {
-	GetClosestNodes(int, Key) []Kademlia
-	GetKBucket(int) KBucket
-	Update(Kademlia)
+	GetClosestNodes(int, Key) ([]Kademlia, error)
+	GetKBucket(int) (KBucket, error)
+	Update(Kademlia) error
 	GetKeyFromKBucket(k int) Key
 }
 

@@ -62,12 +62,15 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 	return
 }
 
-func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Kademlia {
+func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) ([]Kademlia, error) {
 	if kB.start == nil {
-		return nil
+		return nil, nil
 	}
 
-	unorderedScl := sortableContactListFromLinkedList(kB.start, nodeId)
+	unorderedScl, err := sortableContactListFromLinkedList(kB.start, nodeId)
+	if err != nil {
+		return nil, err
+	}
 	sort.Sort(unorderedScl)
 	scl := (*unorderedScl)[:Min(k, len(*unorderedScl))]
 	contacts := make([]Kademlia, 0)
@@ -75,7 +78,7 @@ func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Kademlia {
 		contacts = append(contacts, cd.c)
 	}
 
-	return contacts
+	return contacts, nil
 }
 
 func (kB *kademliaKBucket) GetAllNodes() []Kademlia {
@@ -103,14 +106,17 @@ type distanceToContact struct {
 	c        Kademlia
 }
 
-func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableContactList {
+func sortableContactListFromLinkedList(start *linkedList, nodeId Key) (*sortableContactList, error) {
 	scl := new(sortableContactList)
 	for true {
 		if start == nil {
 			break
 		}
-		//ToDo Handle Error
-		dist, _ := nodeId.XOR(start.value.GetNodeId())
+
+		dist, err := nodeId.XOR(start.value.GetNodeId())
+		if err != nil {
+			return nil, err
+		}
 		sclv := sclAppend(scl, &distanceToContact{
 			c:        start.value,
 			distance: dist,
@@ -118,7 +124,7 @@ func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableC
 		scl = &sclv
 		start = start.next
 	}
-	return scl
+	return scl, nil
 }
 
 type sortableContactList []*distanceToContact
