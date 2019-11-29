@@ -8,6 +8,7 @@ type kademliaKBucket struct {
 	start *linkedList
 	last  *linkedList
 	k     int
+	lk    *LocalKademlia
 }
 
 func (kB *kademliaKBucket) Update(c Kademlia) {
@@ -47,7 +48,7 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 
 	//if the kBucket is full
 	head := kB.start
-	if head.value.Ping() {
+	if head.value.Ping(kB.lk.getContactInformation()) {
 		kB.start = head.next
 		head.next = nil
 		kB.last.next = head

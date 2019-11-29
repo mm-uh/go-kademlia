@@ -16,6 +16,7 @@ type LocalKademlia struct {
 	k    int
 	sm   StorageManager
 	a    int
+	time uint64
 }
 
 func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
@@ -25,7 +26,7 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		kBuckets = append(kBuckets, NewKademliaKBucket(k))
 	}
 	ft := &kademliaFingerTable{
-		id:       key,
+		id:       &key,
 		kbuckets: kBuckets,
 	}
 	return &LocalKademlia{
@@ -35,9 +36,16 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		port: port,
 		k:    k,
 		a:    a,
+		time: 0,
 	}
 }
 
+func (lk *LocalKademlia) getContactInformation() *ContactInformation {
+	return &ContactInformation{
+		node: lk,
+		time: lk.time,
+	}
+}
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 	lk.ft.Update(node)
 	lk.nodeLookup(lk.GetNodeId())
@@ -56,7 +64,12 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 
 }
 
-func (lk *LocalKademlia) Ping() bool {
+func (lk *LocalKademlia) Ping(ci *ContactInformation) bool {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
+
 	return true
 }
 
@@ -72,24 +85,41 @@ func (lk *LocalKademlia) GetNodeId() Key {
 	return lk.id
 }
 
-func (lk *LocalKademlia) ClosestNodes(k int, id Key) []Kademlia {
+func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) []Kademlia {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
 	return lk.ft.GetClosestNodes(k, id)
 }
 
-func (lk *LocalKademlia) Store(key Key, data interface{}) error {
+func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data interface{}) error {
+	lk.time = Max(lk.time, ci.time)
+	lk.ft.Update(ci.node)
 	return lk.sm.Store(key, data)
 }
 
-func (lk *LocalKademlia) Get(id Key) (interface{}, error) {
+func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (interface{}, error) {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
 	return lk.sm.Get(id)
 }
 
-func (lk *LocalKademlia) StoreOnNetwork(id Key, data interface{}) error {
-
+func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data interface{}) error {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
 	return nil
 }
 
-func (lk *LocalKademlia) GetFromNetwork(id Key) (interface{}, error) {
+func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interface{}, error) {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
 	return nil, nil
 }
 
@@ -116,7 +146,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, receivFromWorkers)
+		go queryNode(node, id, round, lk.k, lk.getContactInformation(), receivFromWorkers)
 		//Add node to ordered structure
 		dist, _ := node.GetNodeId().XOR(id)
 		nl := newNodeLookup(node)
@@ -145,7 +175,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 			}
 			if !n.queried {
 				n.queried = true
-				go queryNode(n.node, id, round, lk.k, receivFromWorkers)
+				go queryNode(n.node, id, round, lk.k, lk.getContactInformation(), receivFromWorkers)
 				asked++
 			}
 			if asked == lk.a {
@@ -203,8 +233,8 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 
 }
 
-func queryNode(node Kademlia, id Key, round, k int, send chan nodesPackage) {
-	nodes := node.ClosestNodes(k, id)
+func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage) {
+	nodes := node.ClosestNodes(ci, k, id)
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,

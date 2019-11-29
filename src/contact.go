@@ -2,10 +2,11 @@ package kademlia
 
 import (
 	"encoding/json"
-	"github.com/mm-uh/rpc_udp/src/util"
 	"log"
 	"net"
 	"strconv"
+
+	"github.com/mm-uh/rpc_udp/src/util"
 )
 
 type KademliaContact struct {
@@ -40,11 +41,12 @@ func (kc *KademliaContact) GetPort() int {
 
 func (kc *KademliaContact) Ping() bool {
 	methodName := "Ping"
+	args := make([]interface{}, 0)
 	rpcbase := &util.RPCBase{
 		MethodName: methodName,
-		Args:       make([]string, 0),
 	}
-	rpcbase.Args = append(rpcbase.Args, "Ping")
+	args = append(args, "Ping")
+	rpcbase.Args = args
 	response, err := kc.MakeRequest(rpcbase)
 	if err != nil {
 		return false
