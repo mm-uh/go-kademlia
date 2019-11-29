@@ -32,6 +32,6 @@ type Key interface {
 	Lenght() int
 	Less(other interface{}) (bool, error)
 	Equal(other interface{}) (bool, error)
-	GetString() string
+	String() string
 	GetFromString(string) error
 }
