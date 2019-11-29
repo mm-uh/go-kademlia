@@ -1,6 +1,8 @@
 package kademlia
 
-import "sort"
+import (
+	"sort"
+)
 
 type kademliaKBucket struct {
 	start *linkedList
@@ -10,7 +12,10 @@ type kademliaKBucket struct {
 
 func (kB *kademliaKBucket) Update(c Kademlia) {
 	nn := newLinkedListNode(c)
-
+	if kB.start == nil {
+		kB.start, kB.last = nn, nn
+		return
+	}
 	// if the contact is already in the kBucket
 	first := kB.start
 	var prev *linkedList = nil
@@ -57,14 +62,39 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 }
 
 func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Kademlia {
+	if kB.start == nil {
+		return nil
+	}
+
 	unorderedScl := sortableContactListFromLinkedList(kB.start, nodeId)
 	sort.Sort(unorderedScl)
-	scl := (*unorderedScl)[:k]
+	scl := (*unorderedScl)[:Min(k, len(*unorderedScl))]
 	contacts := make([]Kademlia, 0)
 	for _, cd := range scl {
 		contacts = append(contacts, cd.c)
 	}
+
 	return contacts
+}
+
+func (kB *kademliaKBucket) GetAllNodes() []Kademlia {
+	start := kB.start
+	if start == nil {
+		return nil
+	}
+	result := make([]Kademlia, 0)
+	for start != kB.last {
+		result = append(result, start.value)
+		start = start.next
+	}
+	result = append(result, start.value)
+	return result
+}
+
+func NewKademliaKBucket(n int) *kademliaKBucket {
+	return &kademliaKBucket{
+		k: n,
+	}
 }
 
 type distanceToContact struct {
@@ -80,10 +110,11 @@ func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableC
 		}
 		//ToDo Handle Error
 		dist, _ := nodeId.XOR(start.value.GetNodeId())
-		scl.append(&distanceToContact{
+		sclv := sclAppend(scl, &distanceToContact{
 			c:        start.value,
 			distance: dist,
 		})
+		scl = &sclv
 		start = start.next
 	}
 	return scl
@@ -91,9 +122,8 @@ func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableC
 
 type sortableContactList []*distanceToContact
 
-func (scl *sortableContactList) append(dc *distanceToContact) {
-	tscl := append(*scl, dc)
-	scl = &tscl
+func sclAppend(scl *sortableContactList, dc *distanceToContact) sortableContactList {
+	return append(*scl, dc)
 }
 
 func (scl *sortableContactList) Len() int {

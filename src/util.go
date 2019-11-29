@@ -9,6 +9,9 @@ func log(a uint64) int {
 }
 
 func Pow(a int, b int) int {
+	if b == 0 {
+		return 1
+	}
 	if b == 2 {
 		return a * a
 	}
@@ -17,4 +20,16 @@ func Pow(a int, b int) int {
 		return Pow(halfPow, 2) * a
 	}
 	return Pow(halfPow, 2)
+}
+
+func Min(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+type StorageManager interface {
+	Store(Key, interface{}) error
+	Get(Key) (interface{}, error)
 }
