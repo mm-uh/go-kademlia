@@ -62,12 +62,12 @@ func (kn *KeyNode256) Equal(other interface{}) (bool, error) {
 }
 
 func (kn *KeyNode256) String() string {
-	return hex.EncodeToString(*kn)
+	return hex.EncodeToString((*kn)[:])
 }
 
-func (kn *KeyNode256) GetFromString(string) error {
-	bytes, err := hex.DecodeString(string)
-	(*kn) = bytes
+func (kn *KeyNode256) GetFromString(hash string) error {
+	bytes, err := hex.DecodeString(hash)
+	copy((*kn)[:], bytes[:32])
 	return err
 }
 
@@ -128,11 +128,11 @@ func (kn *KeyNode) Equal(other interface{}) (bool, error) {
 }
 
 func (kn *KeyNode) String() string {
-	return hex.EncodeToString(*kn)
+	return hex.EncodeToString((*kn)[:])
 }
 
 func (kn *KeyNode) GetFromString(hash string) error {
 	bytes, err := hex.DecodeString(hash)
-	(*kn) = bytes
+	copy((*kn)[:], bytes[:20])
 	return err
 }
