@@ -47,6 +47,7 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 			break
 		}
 	}
+
 	index++
 	for ; index < lk.GetNodeId().Lenght(); index++ {
 		key := lk.ft.GetKeyFromKBucket(index)
@@ -138,7 +139,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 		mins := Nodes.GetKMins(lk.k)
 		asked := 0
 		for _, node := range mins {
-			n, ok := node.Value.(nodeLookup)
+			n, ok := node.Value.(*nodeLookup)
 			if !ok {
 				panic("Incorrect type")
 			}
@@ -154,7 +155,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 		if asked == 0 {
 			answ := make([]Kademlia, 0)
 			for _, node := range Nodes.GetKMins(lk.k) {
-				n, ok := node.Value.(nodeLookup)
+				n, ok := node.Value.(*nodeLookup)
 				if !ok {
 					panic("Incorrect type")
 				}
@@ -204,15 +205,16 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 
 func queryNode(node Kademlia, id Key, round, k int, send chan nodesPackage) {
 	nodes := node.ClosestNodes(k, id)
-	var channel chan Kademlia
+	channel := make(chan Kademlia)
 	np := nodesPackage{
-		round:       0,
+		round:       round,
 		receivNodes: channel,
 	}
 	send <- np
 	for _, n := range nodes {
 		channel <- n
 	}
+	close(channel)
 }
 
 func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, lookupEnd chan bool, allNodesComplete chan int, a int) {
@@ -239,7 +241,7 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 		case _ = <-nextRound:
 			{
 				actRound++
-				var channel chan Kademlia
+				channel := make(chan Kademlia)
 				np := nodesPackage{
 					round:       actRound,
 					receivNodes: channel,

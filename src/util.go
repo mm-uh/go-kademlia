@@ -22,6 +22,13 @@ func Pow(a int, b int) int {
 	return Pow(halfPow, 2)
 }
 
+func Min(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 type StorageManager interface {
 	Store(Key, interface{}) error
 	Get(Key) (interface{}, error)

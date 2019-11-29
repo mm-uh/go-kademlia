@@ -1,6 +1,8 @@
 package kademlia
 
-import "sort"
+import (
+	"sort"
+)
 
 type kademliaKBucket struct {
 	start *linkedList
@@ -63,13 +65,15 @@ func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) []Kademlia {
 	if kB.start == nil {
 		return nil
 	}
+
 	unorderedScl := sortableContactListFromLinkedList(kB.start, nodeId)
 	sort.Sort(unorderedScl)
-	scl := (*unorderedScl)[:k]
+	scl := (*unorderedScl)[:Min(k, len(*unorderedScl))]
 	contacts := make([]Kademlia, 0)
 	for _, cd := range scl {
 		contacts = append(contacts, cd.c)
 	}
+
 	return contacts
 }
 
@@ -106,10 +110,11 @@ func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableC
 		}
 		//ToDo Handle Error
 		dist, _ := nodeId.XOR(start.value.GetNodeId())
-		scl.append(&distanceToContact{
+		sclv := sclAppend(scl, &distanceToContact{
 			c:        start.value,
 			distance: dist,
 		})
+		scl = &sclv
 		start = start.next
 	}
 	return scl
@@ -117,9 +122,8 @@ func sortableContactListFromLinkedList(start *linkedList, nodeId Key) *sortableC
 
 type sortableContactList []*distanceToContact
 
-func (scl *sortableContactList) append(dc *distanceToContact) {
-	tscl := append(*scl, dc)
-	scl = &tscl
+func sclAppend(scl *sortableContactList, dc *distanceToContact) sortableContactList {
+	return append(*scl, dc)
 }
 
 func (scl *sortableContactList) Len() int {
