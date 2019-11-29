@@ -36,3 +36,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  branch = "develop"
+  name = "github.com/mm-uh/go-avl"
