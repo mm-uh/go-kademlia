@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/hex"
 	"errors"
 )
 
@@ -60,6 +61,16 @@ func (kn *KeyNode256) Equal(other interface{}) (bool, error) {
 	return true, nil
 }
 
+func (kn *KeyNode256) String() string {
+	return hex.EncodeToString(*kn)
+}
+
+func (kn *KeyNode256) GetFromString(string) error {
+	bytes, err := hex.DecodeString(string)
+	(*kn) = bytes
+	return err
+}
+
 type KeyNode [20]byte
 
 func (kn *KeyNode) XOR(other Key) (Key, error) {
@@ -114,4 +125,14 @@ func (kn *KeyNode) Equal(other interface{}) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (kn *KeyNode) String() string {
+	return hex.EncodeToString(*kn)
+}
+
+func (kn *KeyNode) GetFromString(hash string) error {
+	bytes, err := hex.DecodeString(hash)
+	(*kn) = bytes
+	return err
 }
