@@ -1,0 +1,44 @@
+package kademlia
+
+type Kademlia interface {
+	Ping() bool
+	Store(Key, interface{}) error
+	Get(Key) (interface{}, error)
+<<<<<<< HEAD
+	ClosestNodes(int, Key) ([]Kademlia, error)
+=======
+	StoreOnNetwork(Key, interface{}) error
+	GetFromNetwork(Key) (interface{}, error)
+	ClosestNodes(int, Key) []Kademlia
+>>>>>>> develop
+	GetNodeId() Key
+	GetIP() string
+	GetPort() int
+	JoinNetwork(Kademlia)
+}
+
+type KBucket interface {
+	Update(Kademlia)
+	GetClosestNodes(int, Key) []Kademlia
+	GetAllNodes() []Kademlia
+}
+
+type FingerTable interface {
+	GetClosestNodes(int, Key) []Kademlia
+	GetKBucket(int) KBucket
+	Update(Kademlia)
+	GetKeyFromKBucket(k int) Key
+}
+
+type Key interface {
+	XOR(other Key) (Key, error)
+	IsActive(index int) bool
+	Lenght() int
+<<<<<<< HEAD
+	Less(other Key) (bool, error)
+	GetString() string
+	GetFromString(string) error
+=======
+	Less(other interface{}) (bool, error)
+>>>>>>> develop
+}
