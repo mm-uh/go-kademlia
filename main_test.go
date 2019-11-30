@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	kademlia "github.com/mm-uh/go-kademlia/src"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"testing"
 	"time"
+
+	kademlia "github.com/mm-uh/go-kademlia/src"
+	"github.com/sirupsen/logrus"
 )
 
 func Test(t *testing.T) {
@@ -22,7 +23,7 @@ func Test(t *testing.T) {
 			break
 		}
 	}
-	go Wait(timer, 30)
+	go Wait(timer, 180)
 	ln := kademlia.NewLocalKademlia(ip, port, 20, 3)
 	Node = ln
 	exited := make(chan bool)
@@ -30,11 +31,12 @@ func Test(t *testing.T) {
 
 	time.Sleep(5 * time.Second)
 
-	for i := port + 1; i <= port+20; i++ {
+	for i := port + 1; i <= port+10; i++ {
 		exist := availablePort(i)
 		if exist {
-			rn := kademlia.NewRemoteKademliaWithoutKey(ip, i)
-			go ln.JoinNetwork(rn)
+			ln2 := kademlia.NewLocalKademlia(ip, i, 20, 3)
+			ln2.RunServer(exited)
+			go ln2.JoinNetwork(ln)
 		}
 
 	}

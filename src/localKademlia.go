@@ -178,6 +178,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	}
 
 	var candidates *avl.Node = nil
+	avlLock := new(sync.Mutex)
 	var nodesAnsw *avl.Node = nil
 	mu := sync.Mutex{}
 	cond := sync.NewCond(&mu)
@@ -206,6 +207,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	for {
 		if candidates.GetSize() == 0 {
 			answ := make([]Kademlia, 0)
+			(*avlLock).Lock()
 			for _, node := range nodesAnsw.GetKMins(lk.k) {
 				n, ok := node.Value.(Kademlia)
 				if !ok {
@@ -213,6 +215,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 				}
 				answ = append(answ, n)
 			}
+			(*avlLock).Unlock()
 			endGuard <- true
 			endStorage <- true
 			cond.L.Lock()
@@ -220,8 +223,10 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			cond.L.Unlock()
 			return answ, nil
 		}
-
-		if nodesAnsw.GetSize() >= lk.k {
+		(*avlLock).Lock()
+		size := nodesAnsw.GetSize()
+		(*avlLock).Unlock()
+		if size >= lk.k {
 			candidatesMinTemp := candidates.GetKMins(1)[0]
 			nodesAnswMaxTemp := nodesAnsw.GetMax()
 			candidatesMin, ok := candidatesMinTemp.Value.(*LocalKademlia)
@@ -248,6 +253,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 
 			if !less {
 				answ := make([]Kademlia, 0)
+				(*avlLock).Lock()
 				for _, node := range nodesAnsw.GetKMins(lk.k) {
 					n, ok := node.Value.(Kademlia)
 					if !ok {
@@ -255,6 +261,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 					}
 					answ = append(answ, n)
 				}
+				(*avlLock).Unlock()
 				endGuard <- true
 				endStorage <- true
 				cond.L.Lock()
@@ -263,6 +270,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 				return answ, nil
 			}
 		}
+
 		top := Min(lk.a, candidates.GetSize())
 		for i := 0; i < top; i++ {
 			n := candidates.GetKMins(1)[0]
@@ -280,7 +288,9 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 				if err != nil {
 					return err
 				}
+				(*avlLock).Lock()
 				nodesAnsw = avl.Insert(nodesAnsw, avl.NewNode(dist, nq))
+				(*avlLock).Unlock()
 				return lk.ft.Update(nq)
 			}
 			go queryNode(nk, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
@@ -295,8 +305,10 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			if err != nil {
 				return nil, err
 			}
-
-			if !nodesAnsw.HasKey(dist) {
+			(*avlLock).Lock()
+			exist := nodesAnsw.HasKey(dist)
+			(*avlLock).Unlock()
+			if !exist {
 				newNode := avl.NewNode(dist, node)
 				candidates = avl.Insert(candidates, newNode)
 			}
