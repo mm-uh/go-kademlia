@@ -169,7 +169,6 @@ func (lk *LocalKademlia) GetInfo() string {
 func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	var round int = 1
 	//Create structure to keep ordered nodes
-
 	startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
 	if err != nil {
 		return nil, err
@@ -177,19 +176,24 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	if len(startNodes) == 0 {
 		return nil, nil
 	}
-	//ToDo manage error
-	dist, err := startNodes[0].GetNodeId().XOR(id)
-	if err != nil {
-		return nil, err
-	}
 
+	var candidates *avl.Node = nil
+	avlLock := new(sync.Mutex)
+	var nodesAnsw *avl.Node = nil
 	mu := sync.Mutex{}
 	cond := sync.NewCond(&mu)
 
-	Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
-	node, _ := Nodes.Value.(nodeLookup)
+	for _, node := range startNodes {
+		dist, err := node.GetNodeId().XOR(id)
+		if err != nil {
+			return nil, err
+		}
+		candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	}
+	//Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
+	//node, _ := Nodes.Value.(nodeLookup)
 
-	node.queried = true
+	//node.queried = true
 	nextRoundMain := make(chan bool)
 	nextRoundReceiver := make(chan bool)
 	allNodesComplete := make(chan int)
@@ -199,52 +203,19 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	endGuard := make(chan bool)
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
-	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
-		//Add node to ordered structure
-		dist, _ := node.GetNodeId().XOR(id)
-		nl := newNodeLookup(node)
-		nl.queried = true
-		newNode := avl.NewNode(dist, nl)
-		Nodes = avl.Insert(Nodes, newNode)
-	}
 
 	for {
-		_ = <-nextRoundMain
-		round++
-		np := <-receivFromStorage
-		nodes := np.receivNodes
-		for node := range nodes {
-			//add nodes to ordered structure
-			dist, _ := node.GetNodeId().XOR(id)
-			newNode := avl.NewNode(dist, newNodeLookup(node))
-			Nodes = avl.Insert(Nodes, newNode)
-		}
-		mins := Nodes.GetKMins(lk.k)
-		asked := 0
-		for _, node := range mins {
-			n, ok := node.Value.(*nodeLookup)
-			if !ok {
-				panic("Incorrect type")
-			}
-			if !n.queried {
-				n.queried = true
-				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
-				asked++
-			}
-			if asked == lk.a {
-				break
-			}
-		}
-		if asked == 0 {
+		if candidates.GetSize() == 0 {
 			answ := make([]Kademlia, 0)
-			for _, node := range Nodes.GetKMins(lk.k) {
-				n, ok := node.Value.(*nodeLookup)
+			(*avlLock).Lock()
+			for _, node := range nodesAnsw.GetKMins(lk.k) {
+				n, ok := node.Value.(Kademlia)
 				if !ok {
 					panic("Incorrect type")
 				}
-				answ = append(answ, n.node)
+				answ = append(answ, n)
 			}
+			(*avlLock).Unlock()
 			endGuard <- true
 			endStorage <- true
 			cond.L.Lock()
@@ -252,9 +223,98 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			cond.L.Unlock()
 			return answ, nil
 		}
+		(*avlLock).Lock()
+		size := nodesAnsw.GetSize()
+		(*avlLock).Unlock()
+		if size >= lk.k {
+			candidatesMinTemp := candidates.GetKMins(1)[0]
+			nodesAnswMaxTemp := nodesAnsw.GetMax()
+			candidatesMin, ok := candidatesMinTemp.Value.(*LocalKademlia)
+			if !ok {
+				panic("Incorrect type")
+			}
+			nodesAnswMax, ok := nodesAnswMaxTemp.Value.(*LocalKademlia)
+			if !ok {
+				panic("Incorrect type")
+			}
 
+			dist1, err := candidatesMin.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			dist2, err := nodesAnswMax.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			less, err := dist1.Less(dist2)
+			if err != nil {
+				return nil, err
+			}
+
+			if !less {
+				answ := make([]Kademlia, 0)
+				(*avlLock).Lock()
+				for _, node := range nodesAnsw.GetKMins(lk.k) {
+					n, ok := node.Value.(Kademlia)
+					if !ok {
+						panic("Incorrect type")
+					}
+					answ = append(answ, n)
+				}
+				(*avlLock).Unlock()
+				endGuard <- true
+				endStorage <- true
+				cond.L.Lock()
+				cond.Broadcast()
+				cond.L.Unlock()
+				return answ, nil
+			}
+		}
+
+		top := Min(lk.a, candidates.GetSize())
+		for i := 0; i < top; i++ {
+			n := candidates.GetKMins(1)[0]
+			nk, ok := n.Value.(Kademlia)
+			if !ok {
+				return nil, err
+			}
+			dist, err := nk.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			candidates = avl.Delete(candidates, dist)
+			update := func(nq Kademlia) error {
+				dist, err := nq.GetNodeId().XOR(id)
+				if err != nil {
+					return err
+				}
+				(*avlLock).Lock()
+				nodesAnsw = avl.Insert(nodesAnsw, avl.NewNode(dist, nq))
+				(*avlLock).Unlock()
+				return lk.ft.Update(nq)
+			}
+			go queryNode(nk, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
+		}
+		_ = <-nextRoundMain
+		round++
+		np := <-receivFromStorage
+		nodes := np.receivNodes
+		for node := range nodes {
+			//add nodes to ordered structure
+			dist, err := node.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			(*avlLock).Lock()
+			exist := nodesAnsw.HasKey(dist)
+			(*avlLock).Unlock()
+			if !exist {
+				newNode := avl.NewNode(dist, node)
+				candidates = avl.Insert(candidates, newNode)
+			}
+
+		}
 	}
-
 }
 
 func (lk *LocalKademlia) RunServer(exited chan bool) {
@@ -301,7 +361,7 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 
 }
 
-func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage, finish *sync.Cond) {
+func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage, finish *sync.Cond, update func(Kademlia) error) {
 	lookupFinished := make(chan bool)
 	go func() {
 		finish.L.Lock()
@@ -309,7 +369,11 @@ func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send
 		finish.L.Unlock()
 		lookupFinished <- true
 	}()
-	nodes, _ := node.ClosestNodes(ci, k, id)
+	nodes, err := node.ClosestNodes(ci, k, id)
+	if err == nil {
+		update(node)
+	}
+
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,
@@ -380,16 +444,4 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 type nodesPackage struct {
 	round       int
 	receivNodes chan Kademlia
-}
-
-type nodeLookup struct {
-	queried bool
-	node    Kademlia
-}
-
-func newNodeLookup(node Kademlia) *nodeLookup {
-	return &nodeLookup{
-		queried: false,
-		node:    node,
-	}
 }

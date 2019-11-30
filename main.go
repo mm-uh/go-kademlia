@@ -26,7 +26,7 @@ func main() {
 	exited := make(chan bool)
 	ln.RunServer(exited)
 	http.HandleFunc("/", EndpointHandler)
-	go http.ListenAndServe(fmt.Sprintf(":%d", port+100), nil)
+	go http.ListenAndServe(fmt.Sprintf(":%d", port+1000), nil)
 
 	if !gateway {
 		ipForJoin := os.Args[3]
