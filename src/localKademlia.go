@@ -46,12 +46,16 @@ func (lk *LocalKademlia) getContactInformation() *ContactInformation {
 		time: lk.time,
 	}
 }
-func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
+func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 	lk.ft.Update(node)
 	lk.nodeLookup(lk.GetNodeId())
 	var index int = 0
 	for ; index < lk.GetNodeId().Lenght(); index++ {
-		if len(lk.ft.GetKBucket(index).GetAllNodes()) != 0 {
+		kb, err := lk.ft.GetKBucket(index)
+		if err != nil {
+			return err
+		}
+		if len(kb.GetAllNodes()) != 0 {
 			break
 		}
 	}
@@ -61,7 +65,7 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) {
 		key := lk.ft.GetKeyFromKBucket(index)
 		lk.nodeLookup(key)
 	}
-
+	return nil
 }
 
 func (lk *LocalKademlia) Ping(ci *ContactInformation) bool {
@@ -85,7 +89,7 @@ func (lk *LocalKademlia) GetNodeId() Key {
 	return lk.id
 }
 
-func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) []Kademlia {
+func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) ([]Kademlia, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
@@ -123,18 +127,25 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interfa
 	return nil, nil
 }
 
-func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
+func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	var round int = 1
 	//Create structure to keep ordered nodes
 
-	startNodes := lk.ft.GetClosestNodes(lk.a, id)
+	startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
+	if err != nil {
+		return nil, err
+	}
 	if len(startNodes) == 0 {
-		return nil
+		return nil, nil
 	}
 	//ToDo manage error
-	dist, _ := startNodes[0].GetNodeId().XOR(id)
+	dist, err := startNodes[0].GetNodeId().XOR(id)
+	if err != nil {
+		return nil, err
+	}
 	Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
 	node, _ := Nodes.Value.(nodeLookup)
+
 	node.queried = true
 	nextRoundMain := make(chan bool)
 	nextRoundReceiver := make(chan bool)
@@ -193,7 +204,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) []Kademlia {
 			}
 			endGuard <- true
 			endStorage <- true
-			return answ
+			return answ, nil
 		}
 
 	}
@@ -234,7 +245,7 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 }
 
 func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage) {
-	nodes := node.ClosestNodes(ci, k, id)
+	nodes, _ := node.ClosestNodes(ci, k, id)
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,

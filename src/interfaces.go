@@ -6,23 +6,23 @@ type Kademlia interface {
 	Get(*ContactInformation, Key) (interface{}, error)
 	StoreOnNetwork(*ContactInformation, Key, interface{}) error
 	GetFromNetwork(*ContactInformation, Key) (interface{}, error)
-	ClosestNodes(*ContactInformation, int, Key) []Kademlia
+	ClosestNodes(*ContactInformation, int, Key) ([]Kademlia, error)
 	GetNodeId() Key
 	GetIP() string
 	GetPort() int
-	JoinNetwork(Kademlia)
+	JoinNetwork(Kademlia) error
 }
 
 type KBucket interface {
 	Update(Kademlia)
-	GetClosestNodes(int, Key) []Kademlia
+	GetClosestNodes(int, Key) ([]Kademlia, error)
 	GetAllNodes() []Kademlia
 }
 
 type FingerTable interface {
-	GetClosestNodes(int, Key) []Kademlia
-	GetKBucket(int) KBucket
-	Update(Kademlia)
+	GetClosestNodes(int, Key) ([]Kademlia, error)
+	GetKBucket(int) (KBucket, error)
+	Update(Kademlia) error
 	GetKeyFromKBucket(k int) Key
 }
 
@@ -32,4 +32,6 @@ type Key interface {
 	Lenght() int
 	Less(other interface{}) (bool, error)
 	Equal(other interface{}) (bool, error)
+	String() string
+	GetFromString(string) error
 }
