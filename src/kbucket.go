@@ -21,7 +21,8 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 	first := kB.start
 	var prev *linkedList = nil
 	for true {
-		if first.value.GetNodeId() == c.GetNodeId() {
+		equal, _ := first.value.GetNodeId().Equal(c.GetNodeId())
+		if equal {
 			kB.last.next = first
 			kB.last = first
 			if prev == nil {
