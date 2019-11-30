@@ -169,7 +169,6 @@ func (lk *LocalKademlia) GetInfo() string {
 func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	var round int = 1
 	//Create structure to keep ordered nodes
-
 	startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
 	if err != nil {
 		return nil, err
@@ -177,19 +176,23 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	if len(startNodes) == 0 {
 		return nil, nil
 	}
-	//ToDo manage error
-	dist, err := startNodes[0].GetNodeId().XOR(id)
-	if err != nil {
-		return nil, err
-	}
 
+	var candidates *avl.Node = nil
+	var nodesAnsw *avl.Node = nil
 	mu := sync.Mutex{}
 	cond := sync.NewCond(&mu)
 
-	Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
-	node, _ := Nodes.Value.(nodeLookup)
+	for _, node := range startNodes {
+		dist, err := node.GetNodeId().XOR(id)
+		if err != nil {
+			return nil, err
+		}
+		candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	}
+	//Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
+	//node, _ := Nodes.Value.(nodeLookup)
 
-	node.queried = true
+	//node.queried = true
 	nextRoundMain := make(chan bool)
 	nextRoundReceiver := make(chan bool)
 	allNodesComplete := make(chan int)
@@ -199,57 +202,16 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	endGuard := make(chan bool)
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
-	for _, node := range startNodes {
-		nl := newNodeLookup(node)
-		update := func(n Kademlia) error {
-			nl.queried = true
-			return lk.ft.Update(n)
-		}
-		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
-		//Add node to ordered structure
-		dist, _ := node.GetNodeId().XOR(id)
-		newNode := avl.NewNode(dist, nl)
-		Nodes = avl.Insert(Nodes, newNode)
-	}
 
 	for {
-		_ = <-nextRoundMain
-		round++
-		np := <-receivFromStorage
-		nodes := np.receivNodes
-		for node := range nodes {
-			//add nodes to ordered structure
-			dist, _ := node.GetNodeId().XOR(id)
-			newNode := avl.NewNode(dist, newNodeLookup(node))
-			Nodes = avl.Insert(Nodes, newNode)
-		}
-		mins := Nodes.GetKMins(lk.k)
-		asked := 0
-		for _, node := range mins {
-			n, ok := node.Value.(*nodeLookup)
-			if !ok {
-				panic("Incorrect type")
-			}
-			if !n.queried {
-				update := func(nodeForUpdate Kademlia) error {
-					n.queried = true
-					return lk.ft.Update(nodeForUpdate)
-				}
-				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
-				asked++
-			}
-			if asked == lk.a {
-				break
-			}
-		}
-		if asked == 0 {
+		if candidates.GetSize() == 0 {
 			answ := make([]Kademlia, 0)
-			for _, node := range Nodes.GetKMins(lk.k) {
-				n, ok := node.Value.(*nodeLookup)
+			for _, node := range nodesAnsw.GetKMins(lk.k) {
+				n, ok := node.Value.(Kademlia)
 				if !ok {
 					panic("Incorrect type")
 				}
-				answ = append(answ, n.node)
+				answ = append(answ, n)
 			}
 			endGuard <- true
 			endStorage <- true
@@ -259,8 +221,88 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			return answ, nil
 		}
 
-	}
+		if nodesAnsw.GetSize() >= lk.k {
+			candidatesMinTemp := candidates.GetKMins(1)[0]
+			nodesAnswMaxTemp := nodesAnsw.GetMax()
+			candidatesMin, ok := candidatesMinTemp.Value.(*LocalKademlia)
+			if !ok {
+				panic("Incorrect type")
+			}
+			nodesAnswMax, ok := nodesAnswMaxTemp.Value.(*LocalKademlia)
+			if !ok {
+				panic("Incorrect type")
+			}
 
+			dist1, err := candidatesMin.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			dist2, err := nodesAnswMax.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			less, err := dist1.Less(dist2)
+			if err != nil {
+				return nil, err
+			}
+
+			if !less {
+				answ := make([]Kademlia, 0)
+				for _, node := range nodesAnsw.GetKMins(lk.k) {
+					n, ok := node.Value.(Kademlia)
+					if !ok {
+						panic("Incorrect type")
+					}
+					answ = append(answ, n)
+				}
+				endGuard <- true
+				endStorage <- true
+				cond.L.Lock()
+				cond.Broadcast()
+				cond.L.Unlock()
+				return answ, nil
+			}
+		}
+		top := Min(lk.a, candidates.GetSize())
+		for i := 0; i < top; i++ {
+			n := candidates.GetKMins(1)[0]
+			nk, ok := n.Value.(Kademlia)
+			if !ok {
+				return nil, err
+			}
+			dist, err := nk.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+			candidates = avl.Delete(candidates, dist)
+			update := func(nq Kademlia) error {
+				dist, err := nq.GetNodeId().XOR(id)
+				if err != nil {
+					return err
+				}
+				nodesAnsw = avl.Insert(nodesAnsw, avl.NewNode(dist, nq))
+				return lk.ft.Update(nq)
+			}
+			go queryNode(nk, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
+		}
+		_ = <-nextRoundMain
+		round++
+		np := <-receivFromStorage
+		nodes := np.receivNodes
+		for node := range nodes {
+			//add nodes to ordered structure
+			dist, err := node.GetNodeId().XOR(id)
+			if err != nil {
+				return nil, err
+			}
+
+			if !nodesAnsw.HasKey(dist) {
+				newNode := avl.NewNode(dist, node)
+				candidates = avl.Insert(candidates, newNode)
+			}
+
+		}
+	}
 }
 
 func (lk *LocalKademlia) RunServer(exited chan bool) {
@@ -390,16 +432,4 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 type nodesPackage struct {
 	round       int
 	receivNodes chan Kademlia
-}
-
-type nodeLookup struct {
-	queried bool
-	node    Kademlia
-}
-
-func newNodeLookup(node Kademlia) *nodeLookup {
-	return &nodeLookup{
-		queried: false,
-		node:    node,
-	}
 }
