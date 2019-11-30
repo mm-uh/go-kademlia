@@ -45,3 +45,14 @@ type ContactInformation struct {
 	node Kademlia
 	time uint64
 }
+
+type NodeInformation struct {
+	KBucketNodeInformation
+	Kbuckets map[int][]KBucketNodeInformation `json:"KBuckets"`
+}
+
+type KBucketNodeInformation struct {
+	Key  string `json:"Key"`
+	Ip   string `json:"Ip"`
+	Port int    `json:"Port"`
+}
