@@ -200,7 +200,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
+		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, lk.ft.Update)
 		//Add node to ordered structure
 		dist, _ := node.GetNodeId().XOR(id)
 		nl := newNodeLookup(node)
@@ -229,7 +229,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			}
 			if !n.queried {
 				n.queried = true
-				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
+				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, lk.ft.Update)
 				asked++
 			}
 			if asked == lk.a {
@@ -301,7 +301,7 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 
 }
 
-func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage, finish *sync.Cond) {
+func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage, finish *sync.Cond, update func(Kademlia) error) {
 	lookupFinished := make(chan bool)
 	go func() {
 		finish.L.Lock()
@@ -310,6 +310,7 @@ func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send
 		lookupFinished <- true
 	}()
 	nodes, _ := node.ClosestNodes(ci, k, id)
+	update(node)
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,
