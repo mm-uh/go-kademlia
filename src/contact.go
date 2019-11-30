@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,15 @@ type RemoteKademlia struct {
 func NewRemoteKademlia(key Key, ip string, port int) *RemoteKademlia {
 	return &RemoteKademlia{
 		key:  key,
+		ip:   ip,
+		port: port,
+	}
+}
+
+func NewRemoteKademliaWithoutKey(ip string, port int) *RemoteKademlia {
+	key := KeyNode(sha1.Sum([]byte(fmt.Sprintf("%s:%d", ip, port))))
+	return &RemoteKademlia{
+		key:  &key,
 		ip:   ip,
 		port: port,
 	}

@@ -3,6 +3,8 @@ package kademlia
 import (
 	"crypto/sha1"
 	"fmt"
+	serverRpc "github.com/mm-uh/rpc_udp/src/server"
+	"strconv"
 	"time"
 
 	avl "github.com/mm-uh/go-avl/src"
@@ -209,6 +211,21 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 
 	}
 
+}
+
+func (lk *LocalKademlia) RunServer() {
+	var h HandlerRPC
+
+	server := serverRpc.NewServer(h, lk.ip+":"+strconv.FormatInt(int64(lk.port), 10))
+	// listen to incoming udp packets
+	var exited = make(chan bool)
+	go server.ListenServer(exited)
+
+	if s := <-exited; s {
+		// Handle Error in method
+		fmt.Println("We get an error listen server")
+		return
+	}
 }
 
 func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allNodesComplete chan int) {

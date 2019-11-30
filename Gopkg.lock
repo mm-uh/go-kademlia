@@ -19,9 +19,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:22a3ea069a2a34f6700cc56f9cd69b5e21ca366bb44baa6635dd72167090207f"
+  digest = "1:c18326abc56f80e6bcbb1507b4bb305bee6e62eb3ad7ad400e84284b381c968a"
   name = "github.com/mm-uh/rpc_udp"
-  packages = ["src/util"]
+  packages = [
+    "src/server",
+    "src/util",
+  ]
   pruneopts = "UT"
   revision = "ea3c8d27959791dec3d6af7d135b91aabea75ef7"
 
@@ -46,6 +49,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/mm-uh/go-avl/src",
+    "github.com/mm-uh/rpc_udp/src/server",
     "github.com/mm-uh/rpc_udp/src/util",
     "github.com/sirupsen/logrus",
   ]
