@@ -1,7 +1,9 @@
 package kademlia
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 type HandlerRPC struct {
@@ -55,6 +57,23 @@ func (handler *HandlerRPC) StoreOnNetwork(cInfo, keyAsString string, i interface
 	return "true"
 }
 
+func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
+	var key Key
+	err := key.GetFromString(keyAsString)
+	if err != nil {
+		return "false"
+	}
+	kVal, err := strconv.Atoi(k)
+	if err != nil {
+		return "false"
+	}
+	val, err := handler.kademlia.ClosestNodes(getContactInformationFromString(cInfo), kVal, key)
+	if err != nil {
+		return "false"
+	}
+	return getStrFromKademliaNodes(val)
+}
+
 func (handler *HandlerRPC) GetFromNetwork(cInfo, keyAsString string) string {
 	var key Key
 	err := key.GetFromString(keyAsString)
@@ -98,7 +117,41 @@ func (handler *HandlerRPC) JoinNetwork(keyAsString, ip, portAsString string) str
 	return "true"
 }
 
-func getContactInformationFromString(string) *ContactInformation {
-	// TODO Update this method to convert Contact Information String into proper Struct
-	return &ContactInformation{}
+func getContactInformationFromString(cInfo string) *ContactInformation {
+	values := strings.Split(cInfo, ",")
+	// values[0] =-> NodeId
+	// values[1] =-> Ip
+	// values[2] =-> Port
+	// values[3] =-> time
+ 	if len(values) != 4 {
+		return &ContactInformation{}
+	}
+	var key Key
+	err := key.GetFromString(values[0])
+	if err != nil {
+		return &ContactInformation{}
+	}
+
+	port, err := strconv.Atoi(values[2])
+	if err != nil {
+		return &ContactInformation{}
+	}
+
+	tm, err := strconv.Atoi(values[3])
+	if err != nil {
+		return &ContactInformation{}
+	}
+
+	return &ContactInformation{
+		node:NewRemoteKademlia(key, values[1], port),
+		time: uint64(tm),
+	}
+}
+
+func getStrFromKademliaNodes(kds []Kademlia) string {
+	var values []string
+	for _, val := range kds {
+		values = append(values, fmt.Sprintf("%v,%v,%v", val.GetNodeId(), val.GetIP(), val.GetPort()))
+	}
+	return strings.Join(values, ".")
 }
