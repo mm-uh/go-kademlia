@@ -245,6 +245,10 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 	// receive message from server
 	buffer := make([]byte, 1024)
 	n, _, err := conn.ReadFromUDP(buffer)
+	if n == 0 {
+		logrus.Warn("Couldn't get response from node with method: " + rpcBase.MethodName)
+		return nil, err
+	}
 
 	var response util.ResponseRPC
 	err = json.Unmarshal(buffer[:n], &response)
