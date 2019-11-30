@@ -19,7 +19,7 @@ type RemoteKademlia struct {
 	port int
 }
 
-func NewKademliaContact(key Key, ip string, port int) *RemoteKademlia {
+func NewRemoteKademlia(key Key, ip string, port int) *RemoteKademlia {
 	return &RemoteKademlia{
 		key:  key,
 		ip:   ip,
@@ -39,7 +39,7 @@ func (kc *RemoteKademlia) GetPort() int {
 	return kc.port
 }
 
-func (kc *RemoteKademlia) Ping() bool {
+func (kc *RemoteKademlia) Ping(info *ContactInformation) bool {
 	methodName := "Ping"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -54,7 +54,7 @@ func (kc *RemoteKademlia) Ping() bool {
 	return true
 }
 
-func (kc *RemoteKademlia) StoreOnNetwork(key Key,i interface{}) error {
+func (kc *RemoteKademlia) StoreOnNetwork(info *ContactInformation, key Key,i interface{}) error {
 	methodName := "StoreOnNetwork"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -73,7 +73,33 @@ func (kc *RemoteKademlia) StoreOnNetwork(key Key,i interface{}) error {
 	return nil
 }
 
-func (kc *RemoteKademlia) GetFromNetwork(key Key) (interface{}, error) {
+func (kc *RemoteKademlia) ClosestNodes(cInfo *ContactInformation, k int,key Key) ([]Kademlia, error) {
+	methodName := "GetFromNetwork"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]interface{}, 0)
+	args = append(args, key.GetString())
+	rpcBase.Args = args
+
+	nodeResponse, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return nil, err
+	}
+	
+	returnedNodes, err := getKademliaNodes(nodeResponse.Response)
+	if err != nil {
+		return nil, err
+	}
+	return returnedNodes, nil
+}
+
+func getKademliaNodes(s string) ([]Kademlia, error) {
+	// TODO Update this method to get kademlia nodes
+	return nil, nil
+}
+
+func (kc *RemoteKademlia) GetFromNetwork(info *ContactInformation, key Key) (interface{}, error) {
 	methodName := "GetFromNetwork"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -115,7 +141,7 @@ func (kc *RemoteKademlia) JoinNetwork(kademlia Kademlia) error {
 
 }
 
-func (kc *RemoteKademlia) Store(key Key, i interface{}) error {
+func (kc *RemoteKademlia) Store(info *ContactInformation, key Key, i interface{}) error {
 	methodName := "Store"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -134,7 +160,7 @@ func (kc *RemoteKademlia) Store(key Key, i interface{}) error {
 	return nil
 }
 
-func (kc *RemoteKademlia) Get(key Key) (interface{}, error) {
+func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (interface{}, error) {
 	methodName := "Get"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
