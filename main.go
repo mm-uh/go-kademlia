@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 
 	kademlia "github.com/mm-uh/go-kademlia/src"
 )
+
+var Node *kademlia.LocalKademlia
 
 func main() {
 	ip := os.Args[1]
@@ -19,9 +22,11 @@ func main() {
 	gateway := len(os.Args) == 3
 
 	ln := kademlia.NewLocalKademlia(ip, port, 20, 3)
+	Node = ln
 	exited := make(chan bool)
 	ln.RunServer(exited)
-
+	http.HandleFunc("/", EndpointHandler)
+	go http.ListenAndServe(fmt.Sprintf(":%d", port+100), nil)
 
 	if !gateway {
 		ipForJoin := os.Args[3]
@@ -41,4 +46,9 @@ func main() {
 		fmt.Println("We get an error listen server")
 		return
 	}
+}
+
+func EndpointHandler(w http.ResponseWriter, r *http.Request) {
+	data := Node.GetInfo()
+	fmt.Fprintf(w, "%s", data)
 }

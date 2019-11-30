@@ -2,11 +2,13 @@ package kademlia
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
-	serverRpc "github.com/mm-uh/rpc_udp/src/server"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
+
+	serverRpc "github.com/mm-uh/rpc_udp/src/server"
+	"github.com/sirupsen/logrus"
 
 	avl "github.com/mm-uh/go-avl/src"
 )
@@ -130,6 +132,37 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interfa
 		lk.ft.Update(ci.node)
 	}
 	return nil, nil
+}
+
+func (lk *LocalKademlia) GetInfo() string {
+	ln := KBucketNodeInformation{
+		Ip:   lk.GetIP(),
+		Port: lk.GetPort(),
+		Key:  fmt.Sprintf("%s", lk.GetNodeId()),
+	}
+	kbuckets := make(map[int][]KBucketNodeInformation, 0)
+	for i := 0; i < lk.GetNodeId().Lenght(); i++ {
+		kb, _ := lk.ft.GetKBucket(i)
+		nodes := kb.GetAllNodes()
+		if nodes != nil {
+			for _, node := range nodes {
+				n := KBucketNodeInformation{
+					Ip:   node.GetIP(),
+					Port: node.GetPort(),
+					Key:  fmt.Sprintf("%s", node.GetNodeId()),
+				}
+				kbuckets[i] = append(kbuckets[i], n)
+			}
+		}
+	}
+	info := NodeInformation{
+		KBucketNodeInformation: ln,
+		Kbuckets:               kbuckets,
+	}
+
+	bytes, _ := json.Marshal(info)
+
+	return string(bytes)
 }
 
 func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
