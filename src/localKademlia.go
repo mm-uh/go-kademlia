@@ -3,10 +3,12 @@ package kademlia
 import (
 	"crypto/sha1"
 	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
 	serverRpc "github.com/mm-uh/rpc_udp/src/server"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"time"
 
 	avl "github.com/mm-uh/go-avl/src"
 )
@@ -148,6 +150,10 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	mu := sync.Mutex{}
+	cond := sync.NewCond(&mu)
+
 	Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
 	node, _ := Nodes.Value.(nodeLookup)
 
@@ -162,7 +168,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers)
+		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
 		//Add node to ordered structure
 		dist, _ := node.GetNodeId().XOR(id)
 		nl := newNodeLookup(node)
@@ -191,7 +197,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			}
 			if !n.queried {
 				n.queried = true
-				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers)
+				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond)
 				asked++
 			}
 			if asked == lk.a {
@@ -209,6 +215,9 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			}
 			endGuard <- true
 			endStorage <- true
+			cond.L.Lock()
+			cond.Broadcast()
+			cond.L.Unlock()
 			return answ, nil
 		}
 
@@ -260,18 +269,34 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 
 }
 
-func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage) {
+func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send chan nodesPackage, finish *sync.Cond) {
+	lookupFinished := make(chan bool)
+	go func() {
+		finish.L.Lock()
+		finish.Wait()
+		finish.L.Unlock()
+		lookupFinished <- true
+	}()
 	nodes, _ := node.ClosestNodes(ci, k, id)
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,
 		receivNodes: channel,
 	}
-	send <- np
-	for _, n := range nodes {
-		channel <- n
+	select {
+	case send <- np:
+		{
+			for _, n := range nodes {
+				channel <- n
+			}
+			close(channel)
+		}
+	case _ = <-lookupFinished:
+		{
+			return
+		}
 	}
-	close(channel)
+
 }
 
 func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, lookupEnd chan bool, allNodesComplete chan int, a int) {
