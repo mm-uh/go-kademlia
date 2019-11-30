@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	serverRpc "github.com/mm-uh/rpc_udp/src/server"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 
@@ -42,13 +43,14 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 	}
 }
 
-func (lk *LocalKademlia) getContactInformation() *ContactInformation {
+func (lk *LocalKademlia) GetContactInformation() *ContactInformation {
 	return &ContactInformation{
 		node: lk,
 		time: lk.time,
 	}
 }
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
+	logrus.Info("Joining")
 	lk.ft.Update(node)
 	lk.nodeLookup(lk.GetNodeId())
 	var index int = 0
@@ -67,6 +69,7 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 		key := lk.ft.GetKeyFromKBucket(index)
 		lk.nodeLookup(key)
 	}
+	logrus.Info("Joined")
 	return nil
 }
 
@@ -159,7 +162,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, lk.getContactInformation(), receivFromWorkers)
+		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers)
 		//Add node to ordered structure
 		dist, _ := node.GetNodeId().XOR(id)
 		nl := newNodeLookup(node)
@@ -188,7 +191,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			}
 			if !n.queried {
 				n.queried = true
-				go queryNode(n.node, id, round, lk.k, lk.getContactInformation(), receivFromWorkers)
+				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers)
 				asked++
 			}
 			if asked == lk.a {
@@ -213,19 +216,15 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 
 }
 
-func (lk *LocalKademlia) RunServer() {
+func (lk *LocalKademlia) RunServer(exited chan bool) {
 	var h HandlerRPC
+	h.kademlia = lk
 
 	server := serverRpc.NewServer(h, lk.ip+":"+strconv.FormatInt(int64(lk.port), 10))
+
 	// listen to incoming udp packets
-	var exited = make(chan bool)
 	go server.ListenServer(exited)
 
-	if s := <-exited; s {
-		// Handle Error in method
-		fmt.Println("We get an error listen server")
-		return
-	}
 }
 
 func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allNodesComplete chan int) {

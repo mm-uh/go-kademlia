@@ -2,35 +2,43 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
 	kademlia "github.com/mm-uh/go-kademlia/src"
 )
 
 func main() {
-	n := kademlia.NewLocalKademlia("localhost", 8080, 20, 3)
-	n1 := kademlia.NewLocalKademlia("localhost", 8081, 20, 3)
-	n2 := kademlia.NewLocalKademlia("localhost", 8082, 20, 3)
-	dist, _ := n.GetNodeId().XOR(n1.GetNodeId())
-	var index int = n.GetNodeId().Lenght() - 1
-	for {
-		if index < 0 {
-			break
-		}
-		if dist.IsActive(index) {
-			break
-		}
-		index--
+	ip := os.Args[1]
+	portStr := os.Args[2]
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		panic("Invalid port")
 	}
-	fmt.Println(dist)
-	fmt.Println(index)
 
-	fmt.Println("JOINING NETWORK")
-	n1.JoinNetwork(n)
-	fmt.Println("JOINING NETWORK")
-	n2.JoinNetwork(n)
-	fmt.Println("GETTING CLOSEST NODES")
-	test, _ := n.ClosestNodes(nil, 20, n.GetNodeId())
-	fmt.Println(len(test))
-	fmt.Println(test[0].GetPort())
-	fmt.Println(test[1].GetPort())
+	gateway := len(os.Args) == 3
+
+	ln := kademlia.NewLocalKademlia(ip, port, 20, 3)
+	exited := make(chan bool)
+	ln.RunServer(exited)
+
+
+	if !gateway {
+		ipForJoin := os.Args[3]
+		portForJoinStr := os.Args[4]
+		portForJoin, err := strconv.Atoi(portForJoinStr)
+		if err != nil {
+			panic("Invalid port for join")
+		}
+		rn := kademlia.NewRemoteKademliaWithoutKey(ipForJoin, portForJoin)
+		err = ln.JoinNetwork(rn)
+		if err != nil {
+			panic("Can't Join")
+		}
+	}
+	if s := <-exited; s {
+		// Handle Error in method
+		fmt.Println("We get an error listen server")
+		return
+	}
 }
