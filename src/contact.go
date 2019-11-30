@@ -3,10 +3,12 @@ package kademlia
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/mm-uh/rpc_udp/src/util"
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
+	"strings"
 
 	"time"
 )
@@ -44,6 +46,10 @@ func (kc *RemoteKademlia) Ping(info *ContactInformation) bool {
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
 	}
+	args := make([]string, 0)
+	args = append(args, contactInfoToString(info))
+	rpcBase.Args = args
+
 	response, err := kc.MakeRequest(rpcBase)
 	if err != nil {
 		return false
@@ -60,6 +66,7 @@ func (kc *RemoteKademlia) StoreOnNetwork(info *ContactInformation, key Key,i int
 		MethodName: methodName,
 	}
 	args := make([]interface{}, 0)
+	args = append(args, contactInfoToString(info))
 	args = append(args, key.GetString())
 	args = append(args, i)
 	rpcBase.Args = args
@@ -74,11 +81,13 @@ func (kc *RemoteKademlia) StoreOnNetwork(info *ContactInformation, key Key,i int
 }
 
 func (kc *RemoteKademlia) ClosestNodes(cInfo *ContactInformation, k int,key Key) ([]Kademlia, error) {
-	methodName := "GetFromNetwork"
+	methodName := "ClosestNodes"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
 	}
 	args := make([]interface{}, 0)
+	args = append(args, contactInfoToString(cInfo))
+	args = append(args, strconv.FormatInt(int64(k), 10))
 	args = append(args, key.GetString())
 	rpcBase.Args = args
 
@@ -94,17 +103,13 @@ func (kc *RemoteKademlia) ClosestNodes(cInfo *ContactInformation, k int,key Key)
 	return returnedNodes, nil
 }
 
-func getKademliaNodes(s string) ([]Kademlia, error) {
-	// TODO Update this method to get kademlia nodes
-	return nil, nil
-}
-
 func (kc *RemoteKademlia) GetFromNetwork(info *ContactInformation, key Key) (interface{}, error) {
 	methodName := "GetFromNetwork"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
 	}
 	args := make([]string, 0)
+	args = append(args, contactInfoToString(info))
 	args = append(args, key.GetString())
 	rpcBase.Args = args
 
@@ -147,6 +152,7 @@ func (kc *RemoteKademlia) Store(info *ContactInformation, key Key, i interface{}
 		MethodName: methodName,
 	}
 	args := make([]interface{}, 0)
+	args = append(args, contactInfoToString(info))
 	args = append(args, key.GetString())
 	args = append(args, i)
 	rpcBase.Args = args
@@ -166,6 +172,7 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (interface{}, e
 		MethodName: methodName,
 	}
 	args := make([]string, 0)
+	args = append(args, contactInfoToString(info))
 	args = append(args, key.GetString())
 	rpcBase.Args = args
 
@@ -180,27 +187,6 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (interface{}, e
 	}
 	return returnedKey, nil
 }
-
-//func (kc *RemoteKademlia) ClosestNodes(k int, key Key) ([]Kademlia, error) {
-//	methodName := "ClosesNodes"
-//	rpcBase := &util.RPCBase{
-//		MethodName: methodName,
-//	}
-//	args := make([]float64, 0)
-//	args = append(args, float64(k))
-//	rpcBase.Args = args
-//
-//	response := Contacts{}
-//	nodeResponse, err := kc.MakeRequest(rpcBase)
-//	if err != nil {
-//		return response, err
-//	}
-//	err = json.Unmarshal([]byte(nodeResponse.Response), &response)
-//	if err != nil {
-//		return response, err
-//	}
-//	return response, nil
-//}
 
 func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC, error) {
 
@@ -250,4 +236,37 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 		return nil, err
 	}
 	return &response, nil
+}
+
+// Get Kademlia nodes from string
+func getKademliaNodes(kdNodes string) ([]Kademlia, error) {
+	nodes := strings.Split(kdNodes, ".")
+	response := make([]Kademlia, 0)
+	for _, val := range nodes {
+		node := strings.Split(val, ",")
+		// node[0] =-> NodeId
+		// node[1] =-> Ip
+		// node[2] =-> Port
+		if len(node) != 3 {
+			return nil, errors.New("fail parsing nodes, mismatch params number")
+		}
+		var key Key
+		err := key.GetFromString(node[0])
+		if err != nil {
+			return nil, errors.New("fail parsing nodes, couldn't get key from string")
+		}
+
+		port, err := strconv.Atoi(node[2])
+		if err != nil {
+			return nil, errors.New("fail parsing nodes, couldn't get port from string")
+		}
+		response = append(response, NewRemoteKademlia(key, node[1], port))
+	}
+
+	return response, nil
+}
+
+// Convert Contact Information into string
+func contactInfoToString(cInfo *ContactInformation) string {
+	return fmt.Sprintf("%v,%v,%v,%v", cInfo.node.GetNodeId().GetString(), cInfo.node.GetIP(), cInfo.node.GetIP(), cInfo.time)
 }
