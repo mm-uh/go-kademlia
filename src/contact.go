@@ -39,6 +39,12 @@ func NewRemoteKademliaWithoutKey(ip string, port int) *RemoteKademlia {
 		port: port,
 	}
 }
+func (kc *RemoteKademlia) GetContactInformation() *ContactInformation {
+	return &ContactInformation{
+		node: kc,
+		time: 0,
+	}
+}
 
 func (kc *RemoteKademlia) GetNodeId() Key {
 	return kc.key
@@ -230,7 +236,7 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 		return nil, err
 	}
 
-	timeout := time.Duration(1000)
+	timeout := 10*time.Second
 	deadline := time.Now().Add(timeout)
 	err = conn.SetReadDeadline(deadline)
 	if err != nil {
@@ -251,7 +257,7 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 
 // Get Kademlia nodes from string
 func getKademliaNodes(kdNodes string) ([]Kademlia, error) {
-	nodes := strings.Split(kdNodes, ".")
+	nodes := strings.Split(kdNodes, "$")
 	response := make([]Kademlia, 0)
 	for _, val := range nodes {
 		node := strings.Split(val, ",")
@@ -261,7 +267,7 @@ func getKademliaNodes(kdNodes string) ([]Kademlia, error) {
 		if len(node) != 3 {
 			return nil, errors.New("fail parsing nodes, mismatch params number")
 		}
-		var key Key
+		var key KeyNode
 		err := key.GetFromString(node[0])
 		if err != nil {
 			return nil, errors.New("fail parsing nodes, couldn't get key from string")
@@ -271,7 +277,7 @@ func getKademliaNodes(kdNodes string) ([]Kademlia, error) {
 		if err != nil {
 			return nil, errors.New("fail parsing nodes, couldn't get port from string")
 		}
-		response = append(response, NewRemoteKademlia(key, node[1], port))
+		response = append(response, NewRemoteKademlia(&key, node[1], port))
 	}
 
 	return response, nil
@@ -279,5 +285,5 @@ func getKademliaNodes(kdNodes string) ([]Kademlia, error) {
 
 // Convert Contact Information into string
 func contactInfoToString(cInfo *ContactInformation) string {
-	return fmt.Sprintf("%v,%v,%v,%v", cInfo.node.GetNodeId().String(), cInfo.node.GetIP(), cInfo.node.GetIP(), cInfo.time)
+	return fmt.Sprintf("%v,%v,%v,%v", cInfo.node.GetNodeId().String(), cInfo.node.GetIP(), cInfo.node.GetPort(), cInfo.time)
 }

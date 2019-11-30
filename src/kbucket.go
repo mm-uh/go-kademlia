@@ -48,7 +48,7 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 
 	//if the kBucket is full
 	head := kB.start
-	if head.value.Ping(kB.lk.getContactInformation()) {
+	if head.value.Ping(kB.lk.GetContactInformation()) {
 		kB.start = head.next
 		head.next = nil
 		kB.last.next = head

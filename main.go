@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -18,7 +19,9 @@ func main() {
 	gateway := len(os.Args) == 3
 
 	ln := kademlia.NewLocalKademlia(ip, port, 20, 3)
-	ln.RunServer()
+	exited := make(chan bool)
+	ln.RunServer(exited)
+
 
 	if !gateway {
 		ipForJoin := os.Args[3]
@@ -32,5 +35,10 @@ func main() {
 		if err != nil {
 			panic("Can't Join")
 		}
+	}
+	if s := <-exited; s {
+		// Handle Error in method
+		fmt.Println("We get an error listen server")
+		return
 	}
 }
