@@ -1,6 +1,8 @@
 package kademlia
 
-import "errors"
+import (
+	"errors"
+)
 
 type KeyNode256 [32]byte
 
@@ -45,6 +47,19 @@ func (kn *KeyNode256) Less(other interface{}) (bool, error) {
 	return false, nil
 }
 
+func (kn *KeyNode256) Equal(other interface{}) (bool, error) {
+	otherKey, ok := other.(*KeyNode256)
+	if !ok {
+		return false, errors.New("Param is not a valid type")
+	}
+	for i, bt := range kn {
+		if bt != otherKey[i] {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 type KeyNode [20]byte
 
 func (kn *KeyNode) XOR(other Key) (Key, error) {
@@ -86,4 +101,17 @@ func (kn *KeyNode) Less(other interface{}) (bool, error) {
 		return kn[i] < otherKeyNode[i], nil
 	}
 	return false, nil
+}
+
+func (kn *KeyNode) Equal(other interface{}) (bool, error) {
+	otherKey, ok := other.(*KeyNode)
+	if !ok {
+		return false, errors.New("Param is not a valid type")
+	}
+	for i, bt := range kn {
+		if bt != otherKey[i] {
+			return false, nil
+		}
+	}
+	return true, nil
 }

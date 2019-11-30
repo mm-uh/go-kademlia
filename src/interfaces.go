@@ -1,11 +1,12 @@
 package kademlia
 
 type Kademlia interface {
-	Ping() bool
-	Store(Key, interface{}) error
-	Get(Key) (interface{}, error)
-	StoreOnNetwork(Key, interface{}) error
-	GetFromNetwork(Key) (interface{}, error)
+	Ping(*ContactInformation) bool
+	Store(*ContactInformation, Key, interface{}) error
+	Get(*ContactInformation, Key) (interface{}, error)
+	StoreOnNetwork(*ContactInformation, Key, interface{}) error
+	GetFromNetwork(*ContactInformation, Key) (interface{}, error)
+	ClosestNodes(*ContactInformation, int, Key) ([]Kademlia, error)
 	GetNodeId() Key
 	GetIP() string
 	GetPort() int
@@ -30,6 +31,7 @@ type Key interface {
 	IsActive(index int) bool
 	Lenght() int
 	Less(other interface{}) (bool, error)
+	Equal(other interface{}) (bool, error)
 	GetString() string
 	GetFromString(string) error
 }

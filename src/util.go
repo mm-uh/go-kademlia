@@ -4,9 +4,9 @@ func XOR(a uint64, b uint64) uint64 {
 	return a ^ b
 }
 
-func log(a uint64) int {
-	return 1
-}
+//func log(a uint64) int {
+//	return 1
+//}
 
 func Pow(a int, b int) int {
 	if b == 0 {
@@ -29,7 +29,19 @@ func Min(a int, b int) int {
 	return b
 }
 
+func Max(a uint64, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 type StorageManager interface {
 	Store(Key, interface{}) error
 	Get(Key) (interface{}, error)
+}
+
+type ContactInformation struct {
+	node Kademlia
+	time uint64
 }
