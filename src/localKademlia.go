@@ -200,11 +200,14 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 	for _, node := range startNodes {
-		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, lk.ft.Update)
+		nl := newNodeLookup(node)
+		update := func(n Kademlia) error {
+			nl.queried = true
+			return lk.ft.Update(n)
+		}
+		go queryNode(node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
 		//Add node to ordered structure
 		dist, _ := node.GetNodeId().XOR(id)
-		nl := newNodeLookup(node)
-		nl.queried = true
 		newNode := avl.NewNode(dist, nl)
 		Nodes = avl.Insert(Nodes, newNode)
 	}
@@ -228,8 +231,11 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 				panic("Incorrect type")
 			}
 			if !n.queried {
-				n.queried = true
-				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, lk.ft.Update)
+				update := func(nodeForUpdate Kademlia) error {
+					n.queried = true
+					return lk.ft.Update(nodeForUpdate)
+				}
+				go queryNode(n.node, id, round, lk.k, lk.GetContactInformation(), receivFromWorkers, cond, update)
 				asked++
 			}
 			if asked == lk.a {
@@ -309,8 +315,11 @@ func queryNode(node Kademlia, id Key, round, k int, ci *ContactInformation, send
 		finish.L.Unlock()
 		lookupFinished <- true
 	}()
-	nodes, _ := node.ClosestNodes(ci, k, id)
-	update(node)
+	nodes, err := node.ClosestNodes(ci, k, id)
+	if err == nil {
+		update(node)
+	}
+
 	channel := make(chan Kademlia)
 	np := nodesPackage{
 		round:       round,
