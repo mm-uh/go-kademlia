@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bufio"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
@@ -41,6 +44,45 @@ func main() {
 			panic("Can't Join")
 		}
 	}
+
+	fmt.Println("Get or Save??")
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		scanner.Scan()
+		switch scanner.Text() {
+		case "save":
+			{
+				fmt.Println("Insert Key")
+				scanner.Scan()
+				keyStr := scanner.Text()
+				key := kademlia.KeyNode{}
+				hash := sha1.Sum([]byte(keyStr))
+				key.GetFromString(hex.EncodeToString(hash[:]))
+				fmt.Println("Insert Value")
+				scanner.Scan()
+				val := scanner.Text()
+				ln.StoreOnNetwork(ln.GetContactInformation(), &key, val)
+			}
+
+		case "get":
+			{
+				fmt.Println("Insert Key")
+				scanner.Scan()
+				keyStr := scanner.Text()
+				key := kademlia.KeyNode{}
+				hash := sha1.Sum([]byte(keyStr))
+				key.GetFromString(hex.EncodeToString(hash[:]))
+				val, err := ln.GetFromNetwork(ln.GetContactInformation(), &key)
+				if err != nil {
+					fmt.Println(err.Error())
+				} else {
+					fmt.Println(val)
+				}
+
+			}
+		}
+	}
+
 	if s := <-exited; s {
 		// Handle Error in method
 		fmt.Println("We get an error listen server")

@@ -14,8 +14,8 @@ type Kademlia interface {
 }
 
 type TimeStampedString struct {
-	data string `json:"Data"`
-	time uint64 `json:"Time"`
+	Data string `json:"Data"`
+	Time uint64 `json:"Time"`
 }
 
 type KBucket interface {

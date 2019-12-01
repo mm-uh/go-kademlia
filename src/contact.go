@@ -199,7 +199,7 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (*TimeStampedSt
 		return nil, response.Error
 	}
 	var data TimeStampedString = TimeStampedString{}
-	err = json.Unmarshal([]byte(response.Response), data)
+	err = json.Unmarshal([]byte(response.Response), &data)
 	if err != nil {
 		return nil, err
 	}

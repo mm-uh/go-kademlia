@@ -111,10 +111,10 @@ func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data string) err
 	lk.ft.Update(ci.node)
 	lk.time++
 	dataForSave := TimeStampedString{
-		data: data,
-		time: lk.time,
+		Data: data,
+		Time: lk.time,
 	}
-	str, err := json.Marshal(dataForSave)
+	str, err := json.Marshal(&dataForSave)
 	if err != nil {
 		return err
 	}
@@ -127,12 +127,13 @@ func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (*TimeStampedString
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
+	logrus.Infof("Getting %s key", id.String())
 	var tmStr TimeStampedString = TimeStampedString{}
 	data, err := lk.sm.Get(id)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal([]byte(data), tmStr)
+	err = json.Unmarshal([]byte(data), &tmStr)
 	return &tmStr, err
 }
 
@@ -175,9 +176,9 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (string,
 		if err != nil {
 			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
 		} else {
-			if timeStampedData.time >= time {
-				time = timeStampedData.time
-				val = timeStampedData.data
+			if timeStampedData.Time >= time {
+				time = timeStampedData.Time
+				val = timeStampedData.Data
 			}
 		}
 	}
