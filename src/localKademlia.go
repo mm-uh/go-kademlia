@@ -147,7 +147,6 @@ func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data str
 	if err != nil {
 		return err
 	}
-
 	for _, node := range nodes {
 		err = node.Store(lk.GetContactInformation(), id, data)
 		if err != nil {
@@ -220,13 +219,13 @@ func (lk *LocalKademlia) GetInfo() string {
 func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	var round int = 1
 	//Create structure to keep ordered nodes
-	startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
-	if err != nil {
-		return nil, err
-	}
-	if len(startNodes) == 0 {
-		return nil, nil
-	}
+	//startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(startNodes) == 0 {
+	//	return nil, nil
+	//}
 
 	var candidates *avl.Node = nil
 	avlLock := new(sync.Mutex)
@@ -234,13 +233,24 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	mu := sync.Mutex{}
 	cond := sync.NewCond(&mu)
 
-	for _, node := range startNodes {
-		dist, err := node.GetNodeId().XOR(id)
-		if err != nil {
-			return nil, err
-		}
-		candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	//myDist, err := lk.GetNodeId().XOR(id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//nodesAnsw = avl.Insert(nodesAnsw, avl.NewNode(myDist, lk))
+	//for _, node := range startNodes {
+	//	dist, err := node.GetNodeId().XOR(id)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	//}
+
+	myDist, err := lk.GetNodeId().XOR(id)
+	if err != nil {
+		return nil, err
 	}
+	candidates = avl.Insert(candidates, avl.NewNode(myDist, lk))
 	//Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
 	//node, _ := Nodes.Value.(nodeLookup)
 
