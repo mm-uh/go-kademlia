@@ -43,6 +43,7 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		k:    k,
 		a:    a,
 		time: 0,
+		sm:   NewSimpleKeyValueStore(),
 	}
 }
 
@@ -108,7 +109,12 @@ func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) ([]
 func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data interface{}) error {
 	lk.time = Max(lk.time, ci.time)
 	lk.ft.Update(ci.node)
-	return lk.sm.Store(key, data)
+	lk.time++
+	dataForSave := dataSaved{
+		data: data,
+		time: lk.time,
+	}
+	return lk.sm.Store(key, dataForSave)
 }
 
 func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (interface{}, error) {
@@ -124,6 +130,18 @@ func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data int
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
+
+	nodes, err := lk.nodeLookup(id)
+	if err != nil {
+		return err
+	}
+
+	for _, node := range nodes {
+		err = node.Store(lk.GetContactInformation(), id, data)
+		if err != nil {
+			logrus.WithError(err).Warnf("Error storing data in %s:%d", node.GetIP(), node.GetPort())
+		}
+	}
 	return nil
 }
 
@@ -132,7 +150,32 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interfa
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
-	return nil, nil
+
+	nodes, err := lk.nodeLookup(id)
+	if err != nil {
+		return nil, err
+	}
+
+	var val interface{} = nil
+	var time uint64 = 0
+
+	for _, node := range nodes {
+		timeStampedData, err := node.Get(lk.GetContactInformation(), id)
+		if err != nil {
+			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
+		} else {
+			data, ok := timeStampedData.(dataSaved)
+			if !ok {
+				logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
+			}
+			if data.time >= time {
+				time = data.time
+				val = data.data
+			}
+		}
+	}
+
+	return val, nil
 }
 
 func (lk *LocalKademlia) GetInfo() string {
@@ -444,4 +487,9 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 type nodesPackage struct {
 	round       int
 	receivNodes chan Kademlia
+}
+
+type dataSaved struct {
+	time uint64
+	data interface{}
 }
