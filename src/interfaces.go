@@ -2,15 +2,20 @@ package kademlia
 
 type Kademlia interface {
 	Ping(*ContactInformation) bool
-	Store(*ContactInformation, Key, interface{}) error
-	Get(*ContactInformation, Key) (interface{}, error)
-	StoreOnNetwork(*ContactInformation, Key, interface{}) error
-	GetFromNetwork(*ContactInformation, Key) (interface{}, error)
+	Store(*ContactInformation, Key, string) error
+	Get(*ContactInformation, Key) (*TimeStampedString, error)
+	StoreOnNetwork(*ContactInformation, Key, string) error
+	GetFromNetwork(*ContactInformation, Key) (string, error)
 	ClosestNodes(*ContactInformation, int, Key) ([]Kademlia, error)
 	GetNodeId() Key
 	GetIP() string
 	GetPort() int
 	JoinNetwork(Kademlia) error
+}
+
+type TimeStampedString struct {
+	data string `json:"Data"`
+	time uint64 `json:"Time"`
 }
 
 type KBucket interface {

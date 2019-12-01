@@ -106,26 +106,37 @@ func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) ([]
 	return lk.ft.GetClosestNodes(k, id)
 }
 
-func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data interface{}) error {
+func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data string) error {
 	lk.time = Max(lk.time, ci.time)
 	lk.ft.Update(ci.node)
 	lk.time++
-	dataForSave := dataSaved{
+	dataForSave := TimeStampedString{
 		data: data,
 		time: lk.time,
 	}
-	return lk.sm.Store(key, dataForSave)
+	str, err := json.Marshal(dataForSave)
+	if err != nil {
+		return err
+	}
+
+	return lk.sm.Store(key, string(str))
 }
 
-func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (interface{}, error) {
+func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (*TimeStampedString, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
-	return lk.sm.Get(id)
+	var tmStr TimeStampedString = TimeStampedString{}
+	data, err := lk.sm.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal([]byte(data), tmStr)
+	return &tmStr, err
 }
 
-func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data interface{}) error {
+func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data string) error {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
@@ -145,7 +156,7 @@ func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data int
 	return nil
 }
 
-func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interface{}, error) {
+func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (string, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
@@ -153,10 +164,10 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interfa
 
 	nodes, err := lk.nodeLookup(id)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var val interface{} = nil
+	var val string = ""
 	var time uint64 = 0
 
 	for _, node := range nodes {
@@ -164,13 +175,9 @@ func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interfa
 		if err != nil {
 			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
 		} else {
-			data, ok := timeStampedData.(dataSaved)
-			if !ok {
-				logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
-			}
-			if data.time >= time {
-				time = data.time
-				val = data.data
+			if timeStampedData.time >= time {
+				time = timeStampedData.time
+				val = timeStampedData.data
 			}
 		}
 	}
