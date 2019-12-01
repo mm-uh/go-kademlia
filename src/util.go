@@ -1,5 +1,7 @@
 package kademlia
 
+import "errors"
+
 func XOR(a uint64, b uint64) uint64 {
 	return a ^ b
 }
@@ -55,4 +57,27 @@ type KBucketNodeInformation struct {
 	Key  string `json:"Key"`
 	Ip   string `json:"Ip"`
 	Port int    `json:"Port"`
+}
+
+type SimpleKeyValueStore struct {
+	data map[Key]interface{}
+}
+
+func NewSimpleKeyValueStore() *SimpleKeyValueStore {
+	return &SimpleKeyValueStore{
+		data: make(map[Key]interface{}),
+	}
+}
+
+func (kv *SimpleKeyValueStore) Store(id Key, data interface{}) error {
+	kv.data[id] = data
+	return nil
+}
+
+func (kv *SimpleKeyValueStore) Get(id Key) (interface{}, error) {
+	val, ok := kv.data[id]
+	if !ok {
+		return nil, errors.New("There is no value for that key")
+	}
+	return val, nil
 }
