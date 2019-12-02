@@ -43,6 +43,7 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		k:    k,
 		a:    a,
 		time: 0,
+		sm:   NewSimpleKeyValueStore(),
 	}
 }
 
@@ -105,34 +106,83 @@ func (lk *LocalKademlia) ClosestNodes(ci *ContactInformation, k int, id Key) ([]
 	return lk.ft.GetClosestNodes(k, id)
 }
 
-func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data interface{}) error {
+func (lk *LocalKademlia) Store(ci *ContactInformation, key Key, data string) error {
 	lk.time = Max(lk.time, ci.time)
 	lk.ft.Update(ci.node)
-	return lk.sm.Store(key, data)
+	lk.time++
+	dataForSave := TimeStampedString{
+		Data: data,
+		Time: lk.time,
+	}
+	str, err := json.Marshal(&dataForSave)
+	if err != nil {
+		return err
+	}
+
+	return lk.sm.Store(key, string(str))
 }
 
-func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (interface{}, error) {
+func (lk *LocalKademlia) Get(ci *ContactInformation, id Key) (*TimeStampedString, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
-	return lk.sm.Get(id)
+	logrus.Infof("Getting %s key", id.String())
+	var tmStr TimeStampedString = TimeStampedString{}
+	data, err := lk.sm.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal([]byte(data), &tmStr)
+	return &tmStr, err
 }
 
-func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data interface{}) error {
+func (lk *LocalKademlia) StoreOnNetwork(ci *ContactInformation, id Key, data string) error {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
+	}
+
+	nodes, err := lk.nodeLookup(id)
+	if err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		err = node.Store(lk.GetContactInformation(), id, data)
+		if err != nil {
+			logrus.WithError(err).Warnf("Error storing data in %s:%d", node.GetIP(), node.GetPort())
+		}
 	}
 	return nil
 }
 
-func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (interface{}, error) {
+func (lk *LocalKademlia) GetFromNetwork(ci *ContactInformation, id Key) (string, error) {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
-	return nil, nil
+
+	nodes, err := lk.nodeLookup(id)
+	if err != nil {
+		return "", err
+	}
+
+	var val string = ""
+	var time uint64 = 0
+
+	for _, node := range nodes {
+		timeStampedData, err := node.Get(lk.GetContactInformation(), id)
+		if err != nil {
+			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
+		} else {
+			if timeStampedData.Time >= time {
+				time = timeStampedData.Time
+				val = timeStampedData.Data
+			}
+		}
+	}
+
+	return val, nil
 }
 
 func (lk *LocalKademlia) GetInfo() string {
@@ -169,13 +219,13 @@ func (lk *LocalKademlia) GetInfo() string {
 func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	var round int = 1
 	//Create structure to keep ordered nodes
-	startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
-	if err != nil {
-		return nil, err
-	}
-	if len(startNodes) == 0 {
-		return nil, nil
-	}
+	//startNodes, err := lk.ft.GetClosestNodes(lk.a, id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(startNodes) == 0 {
+	//	return nil, nil
+	//}
 
 	var candidates *avl.Node = nil
 	avlLock := new(sync.Mutex)
@@ -183,13 +233,24 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	mu := sync.Mutex{}
 	cond := sync.NewCond(&mu)
 
-	for _, node := range startNodes {
-		dist, err := node.GetNodeId().XOR(id)
-		if err != nil {
-			return nil, err
-		}
-		candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	//myDist, err := lk.GetNodeId().XOR(id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//nodesAnsw = avl.Insert(nodesAnsw, avl.NewNode(myDist, lk))
+	//for _, node := range startNodes {
+	//	dist, err := node.GetNodeId().XOR(id)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	candidates = avl.Insert(candidates, avl.NewNode(dist, node))
+	//}
+
+	myDist, err := lk.GetNodeId().XOR(id)
+	if err != nil {
+		return nil, err
 	}
+	candidates = avl.Insert(candidates, avl.NewNode(myDist, lk))
 	//Nodes, startNodes := avl.NewNode(dist, newNodeLookup(startNodes[0])), startNodes[1:]
 	//node, _ := Nodes.Value.(nodeLookup)
 
@@ -444,4 +505,9 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 type nodesPackage struct {
 	round       int
 	receivNodes chan Kademlia
+}
+
+type dataSaved struct {
+	time uint64
+	data interface{}
 }

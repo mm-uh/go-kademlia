@@ -77,7 +77,7 @@ func (kc *RemoteKademlia) Ping(info *ContactInformation) bool {
 	return true
 }
 
-func (kc *RemoteKademlia) StoreOnNetwork(info *ContactInformation, key Key, i interface{}) error {
+func (kc *RemoteKademlia) StoreOnNetwork(info *ContactInformation, key Key, i string) error {
 	methodName := "StoreOnNetwork"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -120,7 +120,7 @@ func (kc *RemoteKademlia) ClosestNodes(cInfo *ContactInformation, k int, key Key
 	return returnedNodes, nil
 }
 
-func (kc *RemoteKademlia) GetFromNetwork(info *ContactInformation, key Key) (interface{}, error) {
+func (kc *RemoteKademlia) GetFromNetwork(info *ContactInformation, key Key) (string, error) {
 	methodName := "GetFromNetwork"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -132,14 +132,12 @@ func (kc *RemoteKademlia) GetFromNetwork(info *ContactInformation, key Key) (int
 
 	response, err := kc.MakeRequest(rpcBase)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	var returnedKey Key
-	err = returnedKey.GetFromString(response.Response)
-	if err != nil {
-		return nil, err
+	if response.Error != nil {
+		return "", response.Error
 	}
-	return returnedKey, nil
+	return response.Response, nil
 }
 
 func (kc *RemoteKademlia) JoinNetwork(kademlia Kademlia) error {
@@ -163,7 +161,7 @@ func (kc *RemoteKademlia) JoinNetwork(kademlia Kademlia) error {
 
 }
 
-func (kc *RemoteKademlia) Store(info *ContactInformation, key Key, i interface{}) error {
+func (kc *RemoteKademlia) Store(info *ContactInformation, key Key, i string) error {
 	methodName := "Store"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -183,7 +181,7 @@ func (kc *RemoteKademlia) Store(info *ContactInformation, key Key, i interface{}
 	return nil
 }
 
-func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (interface{}, error) {
+func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (*TimeStampedString, error) {
 	methodName := "Get"
 	rpcBase := &util.RPCBase{
 		MethodName: methodName,
@@ -197,12 +195,15 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	var returnedKey Key
-	err = returnedKey.GetFromString(response.Response)
+	if response.Error != nil {
+		return nil, response.Error
+	}
+	var data TimeStampedString = TimeStampedString{}
+	err = json.Unmarshal([]byte(response.Response), &data)
 	if err != nil {
 		return nil, err
 	}
-	return returnedKey, nil
+	return &data, nil
 }
 
 func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC, error) {
@@ -236,7 +237,7 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 		return nil, err
 	}
 
-	timeout := 10*time.Second
+	timeout := 10 * time.Second
 	deadline := time.Now().Add(timeout)
 	err = conn.SetReadDeadline(deadline)
 	if err != nil {

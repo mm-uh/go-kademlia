@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -16,7 +17,7 @@ func (handler *HandlerRPC) Ping(cInfo string) string {
 	return strconv.FormatBool(pong)
 }
 
-func (handler *HandlerRPC) Store(cInfo string, keyAsString string, i interface{}) string {
+func (handler *HandlerRPC) Store(cInfo string, keyAsString string, i string) string {
 	var key KeyNode
 	err := key.GetFromString(keyAsString)
 	if err != nil {
@@ -39,14 +40,14 @@ func (handler *HandlerRPC) Get(cInfo, keyAsString string) string {
 	if err != nil {
 		return "false"
 	}
-	str, ok := val.(string)
-	if !ok {
+	str, err := json.Marshal(*val)
+	if err != nil {
 		return "false"
 	}
-	return str
+	return string(str)
 }
 
-func (handler *HandlerRPC) StoreOnNetwork(cInfo, keyAsString string, i interface{}) string {
+func (handler *HandlerRPC) StoreOnNetwork(cInfo, keyAsString string, i string) string {
 	var key KeyNode
 	err := key.GetFromString(keyAsString)
 	if err != nil {
@@ -86,11 +87,7 @@ func (handler *HandlerRPC) GetFromNetwork(cInfo, keyAsString string) string {
 	if err != nil {
 		return "false"
 	}
-	str, ok := val.(string)
-	if !ok {
-		return "false"
-	}
-	return str
+	return val
 }
 func (handler *HandlerRPC) GetNodeId() string {
 	return handler.kademlia.GetNodeId().String()

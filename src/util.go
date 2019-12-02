@@ -1,5 +1,9 @@
 package kademlia
 
+import (
+	"errors"
+)
+
 func XOR(a uint64, b uint64) uint64 {
 	return a ^ b
 }
@@ -37,8 +41,8 @@ func Max(a uint64, b uint64) uint64 {
 }
 
 type StorageManager interface {
-	Store(Key, interface{}) error
-	Get(Key) (interface{}, error)
+	Store(Key, string) error
+	Get(Key) (string, error)
 }
 
 type ContactInformation struct {
@@ -55,4 +59,27 @@ type KBucketNodeInformation struct {
 	Key  string `json:"Key"`
 	Ip   string `json:"Ip"`
 	Port int    `json:"Port"`
+}
+
+type SimpleKeyValueStore struct {
+	data map[string]string
+}
+
+func NewSimpleKeyValueStore() *SimpleKeyValueStore {
+	return &SimpleKeyValueStore{
+		data: make(map[string]string),
+	}
+}
+
+func (kv *SimpleKeyValueStore) Store(id Key, data string) error {
+	kv.data[id.String()] = data
+	return nil
+}
+
+func (kv *SimpleKeyValueStore) Get(id Key) (string, error) {
+	val, ok := kv.data[id.String()]
+	if !ok {
+		return "", errors.New("There is no value for that key")
+	}
+	return val, nil
 }
