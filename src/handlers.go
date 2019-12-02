@@ -76,6 +76,33 @@ func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
 	}
 	return getStrFromKademliaNodes(val)
 }
+func (handler *HandlerRPC) LockValue(cInfo, keyAsString string) string {
+	var key KeyNode
+	err := key.GetFromString(keyAsString)
+	if err != nil {
+		return "false"
+	}
+
+	val, err := handler.kademlia.LockValue(getContactInformationFromString(cInfo), &key)
+	if err != nil {
+		return "false"
+	}
+	return strconv.FormatBool(val)
+}
+
+func (handler *HandlerRPC) UnlockValue(cInfo, keyAsString string) string {
+	var key KeyNode
+	err := key.GetFromString(keyAsString)
+	if err != nil {
+		return "false"
+	}
+
+	err = handler.kademlia.UnlockValue(getContactInformationFromString(cInfo), &key)
+	if err != nil {
+		return "false"
+	}
+	return ""
+}
 
 func (handler *HandlerRPC) GetFromNetwork(cInfo, keyAsString string) string {
 	var key KeyNode
