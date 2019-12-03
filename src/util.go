@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
@@ -45,6 +44,66 @@ func Max(a uint64, b uint64) uint64 {
 type StorageManager interface {
 	Store(Key, string) error
 	Get(Key) (string, error)
+	GetAllPairs() KeyValueIterator
+}
+
+type KeyValueIterator interface {
+	Next() bool
+	Value() KeyValue
+	HasNext() bool
+}
+
+type KeyValue interface {
+	GetKey() Key
+	GetValue() string
+}
+
+type SimpleKeyValue struct {
+	key   *KeyNode
+	value string
+}
+
+func (skv *SimpleKeyValue) GetKey() Key {
+	return skv.key
+}
+
+func (skv *SimpleKeyValue) GetValue() string {
+	return skv.value
+}
+
+func NewSimpleKeyValue(key *KeyNode, value string) *SimpleKeyValue {
+	return &SimpleKeyValue{
+		key:   key,
+		value: value,
+	}
+}
+
+type MyKeyValueIterator struct {
+	data    []*SimpleKeyValue
+	current int
+}
+
+func (kvi *MyKeyValueIterator) HasNext() bool {
+	return kvi.current+1 < len(kvi.data)
+}
+
+func (kvi *MyKeyValueIterator) Next() bool {
+	if kvi.HasNext() {
+		kvi.current++
+		return true
+	}
+	return false
+}
+
+func (kvi *MyKeyValueIterator) Value() KeyValue {
+	return kvi.data[kvi.current]
+}
+
+func NewMyKeyValueIterator(data []*SimpleKeyValue) *MyKeyValueIterator {
+	return &MyKeyValueIterator{
+		data:    data,
+		current: -1,
+	}
 }
 
 type ContactInformation struct {
@@ -79,7 +138,6 @@ func (kv *SimpleKeyValueStore) Store(id Key, data string) error {
 	kv.mutex.Lock()
 	defer kv.mutex.Unlock()
 	kv.data[id.String()] = data
-	fmt.Println("SAVING ", data)
 	return nil
 }
 

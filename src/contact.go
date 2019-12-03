@@ -236,7 +236,6 @@ func (kc *RemoteKademlia) LockValue(ci *ContactInformation, id Key) (bool, error
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("LOCK ", data)
 	return data, nil
 }
 
