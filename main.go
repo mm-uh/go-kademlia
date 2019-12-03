@@ -61,7 +61,8 @@ func main() {
 				fmt.Println("Insert Value")
 				scanner.Scan()
 				val := scanner.Text()
-				ln.StoreOnNetwork(ln.GetContactInformation(), &key, val)
+				_, _ = ln.GetAndLock(ln.GetContactInformation(), &key)
+				ln.StoreAndUnlock(ln.GetContactInformation(), &key, val)
 			}
 
 		case "get":
@@ -72,7 +73,8 @@ func main() {
 				key := kademlia.KeyNode{}
 				hash := sha1.Sum([]byte(keyStr))
 				key.GetFromString(hex.EncodeToString(hash[:]))
-				val, err := ln.GetFromNetwork(ln.GetContactInformation(), &key)
+				val, err := ln.GetAndLock(ln.GetContactInformation(), &key)
+				ln.StoreAndUnlock(ln.GetContactInformation(), &key, val)
 				if err != nil {
 					fmt.Println(err.Error())
 				} else {

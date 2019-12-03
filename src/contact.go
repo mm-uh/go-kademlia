@@ -206,6 +206,60 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (*TimeStampedSt
 	return &data, nil
 }
 
+func (kc *RemoteKademlia) GetAndLock(ci *ContactInformation, id Key) (string, error) {
+	return "", nil
+}
+
+func (kc *RemoteKademlia) StoreAndUnlock(ci *ContactInformation, id Key, data string) error {
+	return nil
+}
+
+func (kc *RemoteKademlia) LockValue(ci *ContactInformation, id Key) (bool, error) {
+	methodName := "LockValue"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]string, 0)
+	args = append(args, contactInfoToString(ci))
+	args = append(args, id.String())
+	rpcBase.Args = args
+
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return false, err
+	}
+	if response.Error != nil {
+		return false, response.Error
+	}
+	var data bool = false
+	err = json.Unmarshal([]byte(response.Response), &data)
+	if err != nil {
+		return false, err
+	}
+	fmt.Println("LOCK ", data)
+	return data, nil
+}
+
+func (kc *RemoteKademlia) UnlockValue(ci *ContactInformation, id Key) error {
+	methodName := "UnlockValue"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+	args := make([]string, 0)
+	args = append(args, contactInfoToString(ci))
+	args = append(args, id.String())
+	rpcBase.Args = args
+
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return err
+	}
+	if response.Error != nil {
+		return response.Error
+	}
+	return nil
+}
+
 func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC, error) {
 
 	service := kc.ip + ":" + strconv.Itoa(kc.port)

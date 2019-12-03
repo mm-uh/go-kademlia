@@ -2,6 +2,8 @@ package kademlia
 
 import (
 	"errors"
+	"fmt"
+	"sync"
 )
 
 func XOR(a uint64, b uint64) uint64 {
@@ -62,21 +64,28 @@ type KBucketNodeInformation struct {
 }
 
 type SimpleKeyValueStore struct {
-	data map[string]string
+	data  map[string]string
+	mutex sync.Mutex
 }
 
 func NewSimpleKeyValueStore() *SimpleKeyValueStore {
 	return &SimpleKeyValueStore{
-		data: make(map[string]string),
+		data:  make(map[string]string),
+		mutex: sync.Mutex{},
 	}
 }
 
 func (kv *SimpleKeyValueStore) Store(id Key, data string) error {
+	kv.mutex.Lock()
+	defer kv.mutex.Unlock()
 	kv.data[id.String()] = data
+	fmt.Println("SAVING ", data)
 	return nil
 }
 
 func (kv *SimpleKeyValueStore) Get(id Key) (string, error) {
+	kv.mutex.Lock()
+	defer kv.mutex.Unlock()
 	val, ok := kv.data[id.String()]
 	if !ok {
 		return "", errors.New("There is no value for that key")
