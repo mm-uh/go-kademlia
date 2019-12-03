@@ -6,8 +6,10 @@ type Kademlia interface {
 	Get(*ContactInformation, Key) (*TimeStampedString, error)
 	StoreOnNetwork(*ContactInformation, Key, string) error
 	GetFromNetwork(*ContactInformation, Key) (string, error)
-	GetAndLock(*ContactInformation, Key) (string, error)
-	StoreAndUnlock(*ContactInformation, Key, string) error
+	//GetAndLock(*ContactInformation, Key) (string, error)
+	//StoreAndUnlock(*ContactInformation, Key, string) error
+	GetLock(*ContactInformation, Key) error
+	LeaveLock(*ContactInformation, Key) error
 	UpdateKey(*ContactInformation, Key, *TimeStampedString) error
 	ClosestNodes(*ContactInformation, int, Key) ([]Kademlia, error)
 	LockValue(*ContactInformation, Key) (bool, error)

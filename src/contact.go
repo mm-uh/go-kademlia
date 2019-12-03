@@ -206,11 +206,11 @@ func (kc *RemoteKademlia) Get(info *ContactInformation, key Key) (*TimeStampedSt
 	return &data, nil
 }
 
-func (kc *RemoteKademlia) GetAndLock(ci *ContactInformation, id Key) (string, error) {
-	return "", nil
+func (kc *RemoteKademlia) GetLock(ci *ContactInformation, id Key) error {
+	return nil
 }
 
-func (kc *RemoteKademlia) StoreAndUnlock(ci *ContactInformation, id Key, data string) error {
+func (kc *RemoteKademlia) LeaveLock(ci *ContactInformation, id Key) error {
 	return nil
 }
 

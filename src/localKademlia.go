@@ -24,7 +24,7 @@ type LocalKademlia struct {
 	a             int
 	time          uint64
 	mutex         sync.Mutex
-	lockedObjects map[string]time.Time
+	lockedObjects map[string]LockIdentifier
 }
 
 func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
@@ -39,7 +39,7 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		a:             a,
 		time:          0,
 		sm:            NewSimpleKeyValueStore(),
-		lockedObjects: make(map[string]time.Time, 0),
+		lockedObjects: make(map[string]LockIdentifier, 0),
 		mutex:         sync.Mutex{},
 	}
 
@@ -228,12 +228,12 @@ func (lk *LocalKademlia) LockValue(ci *ContactInformation, id Key) (bool, error)
 	key := id.String()
 	tm, exist := lk.lockedObjects[key]
 	if !exist {
-		lk.lockedObjects[key] = time.Now()
+		lk.lockedObjects[key] = NewLockIdentifier(time.Now(), ci.node.GetNodeId().String())
 		return true, nil
 	}
-	top := tm.Add(2 * time.Minute)
+	top := tm.Time.Add(2 * time.Minute)
 	if top.Before(time.Now()) {
-		lk.lockedObjects[key] = time.Now()
+		lk.lockedObjects[key] = NewLockIdentifier(time.Now(), ci.node.GetNodeId().String())
 		return true, nil
 	}
 	return false, nil
@@ -248,11 +248,18 @@ func (lk *LocalKademlia) UnlockValue(ci *ContactInformation, id Key) error {
 
 	lk.mutex.Lock()
 	defer lk.mutex.Unlock()
-	delete(lk.lockedObjects, id.String())
+	locker, exist := lk.lockedObjects[id.String()]
+	if !exist {
+		return nil
+	}
+	if locker.Id == ci.node.GetNodeId().String() {
+		delete(lk.lockedObjects, id.String())
+	}
+
 	return nil
 }
 
-func (lk *LocalKademlia) GetAndLock(ci *ContactInformation, id Key) (string, error) {
+func (lk *LocalKademlia) GetLock(ci *ContactInformation, id Key) error {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
@@ -260,7 +267,7 @@ func (lk *LocalKademlia) GetAndLock(ci *ContactInformation, id Key) (string, err
 
 	nodes, err := lk.nodeLookup(id)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	for {
@@ -281,25 +288,73 @@ func (lk *LocalKademlia) GetAndLock(ci *ContactInformation, id Key) (string, err
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
+	return nil
+}
 
-	var val string = ""
-	var time uint64 = 0
-
-	for _, node := range nodes {
-		timeStampedData, err := node.Get(lk.GetContactInformation(), id)
-		if err != nil {
-			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
-		} else {
-			if timeStampedData.Time >= time {
-				time = timeStampedData.Time
-				val = timeStampedData.Data
-			}
-		}
+func (lk *LocalKademlia) LeaveLock(ci *ContactInformation, id Key) error {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
 	}
 
-	return val, nil
-
+	nodes, err := lk.nodeLookup(id)
+	if err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		_ = node.UnlockValue(lk.GetContactInformation(), id)
+	}
+	return nil
 }
+
+// func (lk *LocalKademlia) GetAndLock(ci *ContactInformation, id Key) (string, error) {
+// 	if ci != nil {
+// 		lk.time = Max(lk.time, ci.time)
+// 		lk.ft.Update(ci.node)
+// 	}
+
+// 	nodes, err := lk.nodeLookup(id)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	for {
+// 		votes := make([]Kademlia, 0)
+// 		for _, node := range nodes {
+// 			acquire, err := node.LockValue(lk.GetContactInformation(), id)
+// 			if err != nil {
+// 				logrus.WithError(err).Warnf("Error getting lock of value with id %s in host %s:%d", id.String(), node.GetIP(), node.GetPort())
+// 			} else if acquire {
+// 				votes = append(votes, node)
+// 			}
+// 		}
+// 		if len(votes) > (len(nodes) / 2) {
+// 			break
+// 		}
+// 		for _, node := range votes {
+// 			_ = node.UnlockValue(lk.GetContactInformation(), id)
+// 		}
+// 		time.Sleep(500 * time.Millisecond)
+// 	}
+
+// 	var val string = ""
+// 	var time uint64 = 0
+
+// 	for _, node := range nodes {
+// 		timeStampedData, err := node.Get(lk.GetContactInformation(), id)
+// 		if err != nil {
+// 			logrus.WithError(err).Warnf("Could not get the value from %s:%d", node.GetIP(), node.GetPort())
+// 		} else {
+// 			if timeStampedData.Time >= time {
+// 				time = timeStampedData.Time
+// 				val = timeStampedData.Data
+// 			}
+// 		}
+// 	}
+
+// 	return val, nil
+
+// }
 
 func (lk *LocalKademlia) UpdateKey(ci *ContactInformation, key Key, data *TimeStampedString) error {
 	if ci != nil {
@@ -330,28 +385,28 @@ func (lk *LocalKademlia) UpdateKey(ci *ContactInformation, key Key, data *TimeSt
 	return lk.sm.Store(key, string(dataForStore))
 }
 
-func (lk *LocalKademlia) StoreAndUnlock(ci *ContactInformation, id Key, data string) error {
-	if ci != nil {
-		lk.time = Max(lk.time, ci.time)
-		lk.ft.Update(ci.node)
-	}
+// func (lk *LocalKademlia) StoreAndUnlock(ci *ContactInformation, id Key, data string) error {
+// 	if ci != nil {
+// 		lk.time = Max(lk.time, ci.time)
+// 		lk.ft.Update(ci.node)
+// 	}
 
-	nodes, err := lk.nodeLookup(id)
-	if err != nil {
-		return err
-	}
-	for _, node := range nodes {
-		err = node.Store(lk.GetContactInformation(), id, data)
-		if err != nil {
-			logrus.WithError(err).Warnf("Error storing data in %s:%d", node.GetIP(), node.GetPort())
-		}
-	}
+// 	nodes, err := lk.nodeLookup(id)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	for _, node := range nodes {
+// 		err = node.Store(lk.GetContactInformation(), id, data)
+// 		if err != nil {
+// 			logrus.WithError(err).Warnf("Error storing data in %s:%d", node.GetIP(), node.GetPort())
+// 		}
+// 	}
 
-	for _, node := range nodes {
-		_ = node.UnlockValue(lk.GetContactInformation(), id)
-	}
-	return nil
-}
+// 	for _, node := range nodes {
+// 		_ = node.UnlockValue(lk.GetContactInformation(), id)
+// 	}
+// 	return nil
+// }
 
 func (lk *LocalKademlia) GetInfo() string {
 	ln := KBucketNodeInformation{

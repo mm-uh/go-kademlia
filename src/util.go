@@ -3,6 +3,7 @@ package kademlia
 import (
 	"errors"
 	"sync"
+	"time"
 )
 
 func XOR(a uint64, b uint64) uint64 {
@@ -160,4 +161,16 @@ func (kv *SimpleKeyValueStore) GetAllPairs() KeyValueIterator {
 		data = append(data, nkv)
 	}
 	return NewMyKeyValueIterator(data)
+}
+
+type LockIdentifier struct {
+	Time time.Time
+	Id   string
+}
+
+func NewLockIdentifier(time time.Time, id string) LockIdentifier {
+	return LockIdentifier{
+		Id:   id,
+		Time: time,
+	}
 }
