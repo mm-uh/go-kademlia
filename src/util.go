@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"encoding/json"
 	"errors"
 	"sync"
 )
@@ -156,7 +157,9 @@ func (kv *SimpleKeyValueStore) GetAllPairs() KeyValueIterator {
 	for key, value := range kv.data {
 		myKey := KeyNode{}
 		myKey.GetFromString(key)
-		nkv := NewSimpleKeyValue(&myKey, value)
+		var timeStampedData TimeStampedString = TimeStampedString{}
+		_ = json.Unmarshal([]byte(value), &timeStampedData)
+		nkv := NewSimpleKeyValue(&myKey, timeStampedData.Data)
 		data = append(data, nkv)
 	}
 	return NewMyKeyValueIterator(data)

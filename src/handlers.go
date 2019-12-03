@@ -63,6 +63,8 @@ func (handler *HandlerRPC) StoreOnNetwork(cInfo, keyAsString string, i string) s
 func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
 	var key KeyNode
 	err := key.GetFromString(keyAsString)
+	fmt.Println(cInfo)
+	fmt.Println(keyAsString)
 	if err != nil {
 		return "false"
 	}

@@ -29,16 +29,9 @@ type LocalKademlia struct {
 
 func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 	key := KeyNode(sha1.Sum([]byte(fmt.Sprintf("%s:%d", ip, port))))
-	kBuckets := make([]KBucket, 0)
-	for i := 0; i < 160; i++ {
-		kBuckets = append(kBuckets, NewKademliaKBucket(k))
-	}
-	ft := &kademliaFingerTable{
-		id:       &key,
-		kbuckets: kBuckets,
-	}
-	return &LocalKademlia{
-		ft:            ft,
+
+	nn := &LocalKademlia{
+		ft:            nil,
 		id:            &key,
 		ip:            ip,
 		port:          port,
@@ -49,6 +42,32 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 		lockedObjects: make(map[string]time.Time, 0),
 		mutex:         sync.Mutex{},
 	}
+
+	kBuckets := make([]KBucket, 0)
+	for i := 0; i < 160; i++ {
+		kBuckets = append(kBuckets, NewKademliaKBucket(k, nn))
+	}
+	ft := &kademliaFingerTable{
+		id:       &key,
+		kbuckets: kBuckets,
+	}
+	nn.ft = ft
+	go nn.refreshData()
+	return nn
+}
+
+func (lk *LocalKademlia) refreshData() {
+	for {
+		time.Sleep(1 * time.Minute)
+		iter := lk.sm.GetAllPairs()
+		for iter.Next() {
+			val := iter.Value()
+			key := val.GetKey()
+			data := val.GetValue()
+			lk.StoreOnNetwork(lk.GetContactInformation(), key, data)
+		}
+	}
+
 }
 
 func (lk *LocalKademlia) GetContactInformation() *ContactInformation {
@@ -60,7 +79,9 @@ func (lk *LocalKademlia) GetContactInformation() *ContactInformation {
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 	logrus.Info("Joining")
 	lk.ft.Update(node)
+	logrus.Info("GATEWAY NODE ADDED")
 	lk.nodeLookup(lk.GetNodeId())
+	logrus.Info("FIRST LOOKUP FINISHED")
 	var index int = 0
 	for ; index < lk.GetNodeId().Lenght(); index++ {
 		kb, err := lk.ft.GetKBucket(index)
@@ -71,10 +92,12 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 			break
 		}
 	}
-
+	logrus.Info("FINDED KBUCKET")
 	index++
 	for ; index < lk.GetNodeId().Lenght(); index++ {
+		logrus.Infof("GETTING KEY FROM %d", index)
 		key := lk.ft.GetKeyFromKBucket(index)
+		logrus.Infof("LOOKUP NUMBER %d", index)
 		lk.nodeLookup(key)
 	}
 	logrus.Info("Joined")
@@ -372,6 +395,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 	receivFromStorage := make(chan nodesPackage)
 	endStorage := make(chan bool)
 	endGuard := make(chan bool)
+
 	go startRoundGuard(nextRoundMain, nextRoundReceiver, endGuard, allNodesComplete)
 	go replyReceiver(receivFromStorage, receivFromWorkers, nextRoundReceiver, endStorage, allNodesComplete, lk.a)
 
@@ -400,11 +424,11 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 		if size >= lk.k {
 			candidatesMinTemp := candidates.GetKMins(1)[0]
 			nodesAnswMaxTemp := nodesAnsw.GetMax()
-			candidatesMin, ok := candidatesMinTemp.Value.(*LocalKademlia)
+			candidatesMin, ok := candidatesMinTemp.Value.(Kademlia)
 			if !ok {
 				panic("Incorrect type")
 			}
-			nodesAnswMax, ok := nodesAnswMaxTemp.Value.(*LocalKademlia)
+			nodesAnswMax, ok := nodesAnswMaxTemp.Value.(Kademlia)
 			if !ok {
 				panic("Incorrect type")
 			}
@@ -441,7 +465,6 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 				return answ, nil
 			}
 		}
-
 		top := Min(lk.a, candidates.GetSize())
 		for i := 0; i < top; i++ {
 			n := candidates.GetKMins(1)[0]
@@ -485,6 +508,7 @@ func (lk *LocalKademlia) nodeLookup(id Key) ([]Kademlia, error) {
 			}
 
 		}
+
 	}
 }
 
@@ -502,15 +526,18 @@ func (lk *LocalKademlia) RunServer(exited chan bool) {
 func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allNodesComplete chan int) {
 	var actRound int = 1
 	for {
-		timeout := make(chan bool)
-		go func() { //timeout goroutine
+		timeout := make(chan int)
+		go func(roundN int) { //timeout goroutine
 			time.Sleep(1 * time.Second)
-			timeout <- true
-		}()
+			timeout <- actRound
+		}(actRound)
 
 		select {
-		case _ = <-timeout:
+		case timeRound := <-timeout:
 			{
+				if timeRound != actRound {
+					continue
+				}
 			}
 		case round := <-allNodesComplete:
 			{
@@ -527,7 +554,6 @@ func startRoundGuard(nextRoundMain, nextRoundReceiver, lookupEnd chan bool, allN
 		actRound++
 		nextRoundMain <- true
 		nextRoundReceiver <- true
-
 	}
 
 }
@@ -570,6 +596,7 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 	var actRound int = 1
 	var finished int = 0
 	var nodesForSend []Kademlia
+
 	for {
 
 		select {
@@ -579,6 +606,7 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 				for node := range channel {
 					nodesForSend = append(nodesForSend, node)
 				}
+
 				if np.round == actRound {
 					finished++
 				}
@@ -601,6 +629,8 @@ func replyReceiver(sendToMain, receivFromWorkers chan nodesPackage, nextRound, l
 				}
 				close(channel)
 				nodesForSend = make([]Kademlia, 0)
+				finished = 0
+
 			}
 
 		case _ = <-lookupEnd:

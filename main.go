@@ -24,7 +24,7 @@ func main() {
 
 	gateway := len(os.Args) == 3
 
-	ln := kademlia.NewLocalKademlia(ip, port, 20, 3)
+	ln := kademlia.NewLocalKademlia(ip, port, 5, 3)
 	Node = ln
 	exited := make(chan bool)
 	ln.RunServer(exited)
