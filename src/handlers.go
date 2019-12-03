@@ -63,8 +63,7 @@ func (handler *HandlerRPC) StoreOnNetwork(cInfo, keyAsString string, i string) s
 func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
 	var key KeyNode
 	err := key.GetFromString(keyAsString)
-	fmt.Println(cInfo)
-	fmt.Println(keyAsString)
+
 	if err != nil {
 		return "false"
 	}
@@ -77,6 +76,25 @@ func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
 		return "false"
 	}
 	return getStrFromKademliaNodes(val)
+}
+
+func (handler *HandlerRPC) UpdateKey(cInfo, keyAsString, data string) string {
+	var key KeyNode
+	err := key.GetFromString(keyAsString)
+	if err != nil {
+		return "false"
+	}
+	var timeStampedData *TimeStampedString
+	err = json.Unmarshal([]byte(data), timeStampedData)
+	if err != nil {
+		return "false"
+	}
+	err = handler.kademlia.UpdateKey(getContactInformationFromString(cInfo), &key, timeStampedData)
+	if err != nil {
+		return "false"
+	}
+
+	return "true"
 }
 func (handler *HandlerRPC) LockValue(cInfo, keyAsString string) string {
 	var key KeyNode

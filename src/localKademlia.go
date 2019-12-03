@@ -295,6 +295,34 @@ func (lk *LocalKademlia) GetAndLock(ci *ContactInformation, id Key) (string, err
 
 }
 
+func (lk *LocalKademlia) UpdateKey(ci *ContactInformation, key Key, data *TimeStampedString) error {
+	if ci != nil {
+		lk.time = Max(lk.time, ci.time)
+		lk.ft.Update(ci.node)
+	}
+
+	var timeStamptedString *TimeStampedString
+	storedData, err := lk.sm.Get(key)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal([]byte(storedData), timeStamptedString)
+	if err != nil {
+		return err
+	}
+	if timeStamptedString.Time < data.Time {
+		timeStamptedString.Time = data.Time
+		timeStamptedString.Data = data.Data
+	}
+
+	dataForStore, err := json.Marshal(timeStamptedString)
+	if err != nil {
+		return err
+	}
+	return lk.sm.Store(key, string(dataForStore))
+}
+
 func (lk *LocalKademlia) StoreAndUnlock(ci *ContactInformation, id Key, data string) error {
 	if ci != nil {
 		lk.time = Max(lk.time, ci.time)

@@ -239,6 +239,32 @@ func (kc *RemoteKademlia) LockValue(ci *ContactInformation, id Key) (bool, error
 	return data, nil
 }
 
+func (kc *RemoteKademlia) UpdateKey(ci *ContactInformation, id Key, data *TimeStampedString) error {
+	methodName := "UpdateKey"
+	rpcBase := &util.RPCBase{
+		MethodName: methodName,
+	}
+
+	args := make([]string, 0)
+	args = append(args, contactInfoToString(ci))
+	args = append(args, id.String())
+	dataForSend, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	args = append(args, string(dataForSend))
+
+	rpcBase.Args = args
+
+	response, err := kc.MakeRequest(rpcBase)
+	if err != nil {
+		return err
+	}
+
+	return response.Error
+
+}
+
 func (kc *RemoteKademlia) UnlockValue(ci *ContactInformation, id Key) error {
 	methodName := "UnlockValue"
 	rpcBase := &util.RPCBase{

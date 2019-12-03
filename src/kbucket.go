@@ -16,13 +16,11 @@ type kademliaKBucket struct {
 func (kB *kademliaKBucket) Update(c Kademlia) {
 	kB.mutex.Lock()
 	defer kB.mutex.Unlock()
-	// fmt.Println("KBUCKET UPDATE 1")
 	nn := newLinkedListNode(c)
 	if kB.start == nil {
 		kB.start, kB.last = nn, nn
 		return
 	}
-	// fmt.Println("KBUCKET UPDATE 2")
 	// if the contact is already in the kBucket
 	first := kB.start
 	var prev *linkedList = nil
@@ -45,17 +43,14 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 		prev = first
 		first = first.next
 	}
-	// fmt.Println("KBUCKET UPDATE 4")
 	// if the kBucket is not full
 	if kB.start.len() < kB.k {
 		kB.last.next = nn
 		kB.last = nn
 		return
 	}
-	// fmt.Println("KBUCKET UPDATE 5")
 	//if the kBucket is full
 	head := kB.start
-	// spew.Dump(kB.lk)
 	if head.value.Ping(kB.lk.GetContactInformation()) {
 		kB.start = head.next
 		head.next = nil
@@ -63,7 +58,6 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 		kB.last = head
 		return
 	}
-	// fmt.Println("KBUCKET UPDATE 6")
 	kB.start = head.next
 	kB.last.next = nn
 	kB.last = nn
