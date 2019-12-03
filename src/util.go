@@ -150,3 +150,14 @@ func (kv *SimpleKeyValueStore) Get(id Key) (string, error) {
 	}
 	return val, nil
 }
+
+func (kv *SimpleKeyValueStore) GetAllPairs() KeyValueIterator {
+	data := make([]*SimpleKeyValue, 0)
+	for key, value := range kv.data {
+		myKey := KeyNode{}
+		myKey.GetFromString(key)
+		nkv := NewSimpleKeyValue(&myKey, value)
+		data = append(data, nkv)
+	}
+	return NewMyKeyValueIterator(data)
+}
