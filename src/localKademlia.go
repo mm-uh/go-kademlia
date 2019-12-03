@@ -58,13 +58,24 @@ func NewLocalKademlia(ip string, port, k int, a int) *LocalKademlia {
 
 func (lk *LocalKademlia) refreshData() {
 	for {
-		time.Sleep(1 * time.Minute)
+		time.Sleep(30 * time.Second)
 		iter := lk.sm.GetAllPairs()
 		for iter.Next() {
 			val := iter.Value()
 			key := val.GetKey()
 			data := val.GetValue()
-			lk.StoreOnNetwork(lk.GetContactInformation(), key, data)
+			var timeStampedData TimeStampedString
+			err := json.Unmarshal([]byte(data), &timeStampedData)
+			if err != nil {
+				break
+			}
+			nodes, err := lk.nodeLookup(key)
+			if err != nil {
+				break
+			}
+			for _, node := range nodes {
+				node.UpdateKey(lk.GetContactInformation(), key, &timeStampedData)
+			}
 		}
 	}
 
@@ -79,9 +90,7 @@ func (lk *LocalKademlia) GetContactInformation() *ContactInformation {
 func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 	logrus.Info("Joining")
 	lk.ft.Update(node)
-	logrus.Info("GATEWAY NODE ADDED")
 	lk.nodeLookup(lk.GetNodeId())
-	logrus.Info("FIRST LOOKUP FINISHED")
 	var index int = 0
 	for ; index < lk.GetNodeId().Lenght(); index++ {
 		kb, err := lk.ft.GetKBucket(index)
@@ -92,12 +101,9 @@ func (lk *LocalKademlia) JoinNetwork(node Kademlia) error {
 			break
 		}
 	}
-	logrus.Info("FINDED KBUCKET")
 	index++
 	for ; index < lk.GetNodeId().Lenght(); index++ {
-		logrus.Infof("GETTING KEY FROM %d", index)
 		key := lk.ft.GetKeyFromKBucket(index)
-		logrus.Infof("LOOKUP NUMBER %d", index)
 		lk.nodeLookup(key)
 	}
 	logrus.Info("Joined")
@@ -300,14 +306,16 @@ func (lk *LocalKademlia) UpdateKey(ci *ContactInformation, key Key, data *TimeSt
 		lk.time = Max(lk.time, ci.time)
 		lk.ft.Update(ci.node)
 	}
-
-	var timeStamptedString *TimeStampedString
 	storedData, err := lk.sm.Get(key)
 	if err != nil {
-		return err
+		dataForStore, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		return lk.sm.Store(key, string(dataForStore))
 	}
-
-	err = json.Unmarshal([]byte(storedData), timeStamptedString)
+	var timeStamptedString TimeStampedString
+	err = json.Unmarshal([]byte(storedData), &timeStamptedString)
 	if err != nil {
 		return err
 	}
@@ -315,7 +323,6 @@ func (lk *LocalKademlia) UpdateKey(ci *ContactInformation, key Key, data *TimeSt
 		timeStamptedString.Time = data.Time
 		timeStamptedString.Data = data.Data
 	}
-
 	dataForStore, err := json.Marshal(timeStamptedString)
 	if err != nil {
 		return err
