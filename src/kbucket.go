@@ -65,8 +65,8 @@ func (kB *kademliaKBucket) Update(c Kademlia) {
 }
 
 func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) ([]Kademlia, error) {
-	kB.mutex.Lock()
-	defer kB.mutex.Unlock()
+	//kB.mutex.Lock()
+	//defer kB.mutex.Unlock()
 	if kB.start == nil {
 		return nil, nil
 	}
@@ -86,8 +86,8 @@ func (kB *kademliaKBucket) GetClosestNodes(k int, nodeId Key) ([]Kademlia, error
 }
 
 func (kB *kademliaKBucket) GetAllNodes() []Kademlia {
-	kB.mutex.Lock()
-	defer kB.mutex.Unlock()
+	// kB.mutex.Lock()
+	// defer kB.mutex.Unlock()
 	start := kB.start
 	if start == nil {
 		return nil

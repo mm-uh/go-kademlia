@@ -11,8 +11,6 @@ import (
 
 	"github.com/mm-uh/rpc_udp/src/util"
 	"github.com/sirupsen/logrus"
-
-	"time"
 )
 
 type Contacts []Kademlia
@@ -294,7 +292,7 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 	conn, err := net.DialUDP("udp", nil, RemoteAddr)
 
 	if err != nil {
-		logrus.Warn(err)
+		logrus.Warn(err, 1)
 		return nil, err
 	}
 
@@ -303,7 +301,7 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 	// write a message to server
 	toSend, err := json.Marshal(rpcBase)
 	if err != nil {
-		logrus.Warn(err)
+		logrus.Warn(err, 2)
 		return nil, err
 	}
 
@@ -312,28 +310,29 @@ func (kc *RemoteKademlia) MakeRequest(rpcBase *util.RPCBase) (*util.ResponseRPC,
 	_, err = conn.Write(message)
 
 	if err != nil {
-		logrus.Warn("Error: " + err.Error())
+		logrus.Warn("Error: "+err.Error(), 3)
 		return nil, err
 	}
 
-	timeout := 10 * time.Second
-	deadline := time.Now().Add(timeout)
-	err = conn.SetReadDeadline(deadline)
+	// timeout := 30 * time.Second
+	// deadline := time.Now().Add(timeout)
+	// err = conn.SetReadDeadline(deadline)
 	if err != nil {
 		return nil, err
 	}
 	// receive message from server
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 10000)
 	n, _, err := conn.ReadFromUDP(buffer)
 	if n == 0 {
-		logrus.Warn("Couldn't get response from node with method: " + rpcBase.MethodName)
+		//logrus.Warn("from node with method: "+rpcBase.MethodName, " from: ", service)
+		logrus.Warn(err.Error(), " HERE")
 		return nil, err
 	}
-
+	//fmt.Println(string(buffer[:n]))
 	var response util.ResponseRPC
 	err = json.Unmarshal(buffer[:n], &response)
 	if err != nil {
-		logrus.Warn("Error Unmarshaling response")
+		logrus.Warn("Error Unmarshaling response 4 ")
 		return nil, err
 	}
 	return &response, nil

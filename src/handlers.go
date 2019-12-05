@@ -80,17 +80,24 @@ func (handler *HandlerRPC) ClosestNodes(cInfo, k, keyAsString string) string {
 
 func (handler *HandlerRPC) UpdateKey(cInfo, keyAsString, data string) string {
 	var key KeyNode
+	//	fmt.Println("RECEIVING UPDATE ", keyAsString)
 	err := key.GetFromString(keyAsString)
 	if err != nil {
+		//		fmt.Println("JODIO 1")
 		return "false"
 	}
-	var timeStampedData *TimeStampedString
+
+	var timeStampedData *TimeStampedString = &TimeStampedString{}
 	err = json.Unmarshal([]byte(data), timeStampedData)
+	// fmt.Println("DATA AT HANDLER ", data)
 	if err != nil {
+		// fmt.Println("JODIO 2")
+		// fmt.Println(err.Error())
 		return "false"
 	}
 	err = handler.kademlia.UpdateKey(getContactInformationFromString(cInfo), &key, timeStampedData)
 	if err != nil {
+		// fmt.Println("JODIO 3")
 		return "false"
 	}
 

@@ -80,20 +80,21 @@ func main() {
 				key := kademlia.KeyNode{}
 				hash := sha1.Sum([]byte(keyStr))
 				key.GetFromString(hex.EncodeToString(hash[:]))
+				fmt.Println(key.String())
 				//val, err := ln.GetAndLock(ln.GetContactInformation(), &key)
 				//ln.StoreAndUnlock(ln.GetContactInformation(), &key, val)
-				err := ln.GetLock(ln.GetContactInformation(), &key)
-				if err != nil {
-					fmt.Println("COULD NOT GET VALUE")
-					continue
-				}
+				//err := ln.GetLock(ln.GetContactInformation(), &key)
+				//if err != nil {
+				//	fmt.Println("COULD NOT GET VALUE")
+				//	continue
+				//}
 				val, err := ln.GetFromNetwork(ln.GetContactInformation(), &key)
-				ln.LeaveLock(ln.GetContactInformation(), &key)
 				if err != nil {
 					fmt.Println(err.Error())
 				} else {
 					fmt.Println(val)
 				}
+				//ln.LeaveLock(ln.GetContactInformation(), &key)
 
 			}
 		}

@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -173,4 +174,17 @@ func NewLockIdentifier(time time.Time, id string) LockIdentifier {
 		Id:   id,
 		Time: time,
 	}
+}
+
+func printRemote(nodes []Kademlia) string {
+	answ := ""
+	for _, n := range nodes {
+		answ = fmt.Sprintf("%s %s,", answ, n.GetIP()[7:])
+	}
+	return answ
+}
+
+type NodesWithTime struct {
+	nodes []Kademlia
+	time  time.Time
 }
